@@ -1,0 +1,6 @@
+[submodule "treesitter/grammars/dart/upstream"]
+	path = treesitter/grammars/dart/upstream
+	url = https://github.com/UserNobody14/tree-sitter-dart.git
+[submodule "treesitter/grammars/swift/upstream"]
+	path = treesitter/grammars/swift/upstream
+	url = https://github.com/alex-pinkus/tree-sitter-swift.git
