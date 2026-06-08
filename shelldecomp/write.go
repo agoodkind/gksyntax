@@ -18,7 +18,11 @@ func (walk *walker) handleFileRedirect(node *tree_sitter.Node, command Command, 
 	if destination == nil {
 		return
 	}
-	if destination.Kind() == "number" || destination.Kind() == "file_descriptor" {
+	// A descriptor target (2>&1) names no file. A process or command substitution
+	// (> >(tee log)) is not a file either; resolving its text would fabricate a
+	// path, so it is skipped rather than recorded as a write.
+	if destination.Kind() == "number" || destination.Kind() == "file_descriptor" ||
+		destination.Kind() == "process_substitution" || destination.Kind() == "command_substitution" {
 		return
 	}
 	token := resolveArgNode(destination, walk.source)

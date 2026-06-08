@@ -155,7 +155,7 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 		return
 	}
 	if kind == kindRedirectedStatement {
-		walk.walkRedirected(node, currentScope)
+		walk.walkRedirected(node, currentScope, firstStage)
 		return
 	}
 	if kind == kindCommand {
@@ -182,10 +182,12 @@ func (walk *walker) walkPipeline(node *tree_sitter.Node, currentScope *scope) {
 }
 
 // walkRedirected handles a redirected_statement: it classifies the body command
-// (passing along whether the body is the first pipeline stage), records write
-// targets for output redirects, and exposes a heredoc body as an embedded
-// region consumed by the body command.
-func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope) {
+// exactly as a bare command (its cwd effect, read targets, inline writes, and
+// embedded code), then records the redirects (output-redirect writes and a
+// heredoc body as an embedded region). The body collection must run here too,
+// because a redirected reader (grep x f > out) or writer (tee f < in) carries
+// its targets on the body command, not on the redirect.
+func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, firstStage bool) {
 	body := node.ChildByFieldName("body")
 	if body == nil {
 		walk.walkSequence(node, currentScope)
@@ -193,6 +195,14 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope) 
 	}
 	argv0, args := extractCommand(body, walk.source)
 	command := walk.buildCommand(body, argv0, args, currentScope)
+
+	if command.Kind == CommandKindNav && command.Argv0 == "cd" {
+		currentScope.applyCd(command.Args)
+		walk.result.recordCwd(body.StartByte(), currentScope.cwd)
+	}
+	walk.collectReadTargets(command, args, currentScope, firstStage)
+	walk.collectInlineWrites(command, args, currentScope)
+	walk.dispatchEmbedded(body, command, args, currentScope)
 
 	for index := range node.ChildCount() {
 		child := node.Child(index)
@@ -217,6 +227,17 @@ func (walk *walker) handleRedirect(node *tree_sitter.Node, command Command, curr
 	}
 	if kind == kindHeredocRedirect {
 		walk.handleHeredoc(node, command, currentScope)
+		// A trailing output redirect (cat <<EOF >> log) parses as a file_redirect
+		// nested inside the heredoc_redirect, so descend to record its write.
+		for index := range node.ChildCount() {
+			child := node.Child(index)
+			if child == nil {
+				continue
+			}
+			if nodeKind(child.Kind()) == kindFileRedirect {
+				walk.handleFileRedirect(child, command, currentScope)
+			}
+		}
 	}
 }
 
