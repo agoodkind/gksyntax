@@ -51,11 +51,24 @@ var patternTakingSearchers = map[string]bool{
 	"git grep": true,
 }
 
-// usesPattern reports whether the command takes a leading pattern operand, as
-// the grep family and git grep do. Tools like cat or head read every operand
-// as a path.
+// programTakingTools are the commands whose first bare operand is an inline
+// program rather than a path: awk's pattern-action script and sed's editing
+// script. A literal script like '{print $1}' or 's/a/b/' must not be resolved as
+// a read path. When the script is supplied through -e or -f instead, the first
+// bare operand is a data file, which the -e/-f handling already accounts for.
+var programTakingTools = map[string]bool{
+	"awk":  true,
+	"gawk": true,
+	"sed":  true,
+	"jq":   true,
+}
+
+// usesPattern reports whether the command consumes its first bare operand as a
+// pattern or an inline program rather than a path: the grep family and git grep
+// take a pattern, and awk and sed take a script. Tools like cat or head read
+// every operand as a path.
 func (scan *readScan) usesPattern() bool {
-	return patternTakingSearchers[scan.argv0]
+	return patternTakingSearchers[scan.argv0] || programTakingTools[scan.argv0]
 }
 
 // run returns the path operands and whether a recursive flag was seen. It skips

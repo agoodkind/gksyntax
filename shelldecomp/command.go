@@ -1,6 +1,7 @@
 package shelldecomp
 
 import (
+	"path"
 	"strings"
 
 	tree_sitter "github.com/tree-sitter/go-tree-sitter"
@@ -178,9 +179,19 @@ func extractCommand(node *tree_sitter.Node, source []byte) (string, []rawArg) {
 
 	argv0 := ""
 	if nameNode != nil {
-		argv0 = literalArgv0(nameNode, source)
+		argv0 = baseName(literalArgv0(nameNode, source))
 	}
 	return stripWrappers(argv0, args)
+}
+
+// baseName reduces a path-invoked program name to its final element so a command
+// run by absolute path (/usr/bin/stat) classifies the same as its bare name. A
+// name with no slash is returned unchanged, and an empty name stays empty.
+func baseName(argv0 string) string {
+	if argv0 == "" || !strings.Contains(argv0, "/") {
+		return argv0
+	}
+	return path.Base(argv0)
 }
 
 // literalArgv0 returns the program name when the command_name holds a plain
@@ -270,7 +281,7 @@ func promoteFirstArg(args []rawArg) (string, []rawArg) {
 	if !first.resolvable {
 		return "", rest
 	}
-	return first.value, rest
+	return baseName(first.value), rest
 }
 
 // isAssignment reports whether a token is a VAR=value env assignment.

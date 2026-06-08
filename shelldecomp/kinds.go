@@ -25,6 +25,7 @@ const (
 	kindSimpleExpansion     nodeKind = "simple_expansion"
 	kindExpansion           nodeKind = "expansion"
 	kindCommandSubstitution nodeKind = "command_substitution"
+	kindProcessSubstitution nodeKind = "process_substitution"
 	kindNumber              nodeKind = "number"
 	kindFileDescriptor      nodeKind = "file_descriptor"
 	kindDoubleQuote         nodeKind = "\""

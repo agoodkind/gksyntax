@@ -140,6 +140,7 @@ var nonLiteralKinds = map[nodeKind]bool{
 	kindSimpleExpansion:     true,
 	kindExpansion:           true,
 	kindCommandSubstitution: true,
+	kindProcessSubstitution: true,
 }
 
 // isNonLiteralKind reports whether a node kind is inherently non-literal.

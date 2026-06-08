@@ -104,6 +104,15 @@ var valueFlagsByArgv0 = map[string]map[string]bool{
 		"--max-count": true,
 	},
 	"ag": {"-G": true, "--file-search-regex": true},
+	// sed -e/-f supply the editing script; awk -f supplies the program and
+	// -F/-v supply the separator and a variable. Their values are not paths.
+	"sed":  {"-e": true, "-f": true},
+	"awk":  {"-F": true, "-v": true, "-f": true},
+	"gawk": {"-F": true, "-v": true, "-f": true},
+	// jq's flags carry the program or named arguments, not data paths; stat's
+	// -f format and -t format string are not paths.
+	"jq":   {"-f": true, "--from-file": true, "--arg": true, "--argjson": true, "--slurpfile": true, "--rawfile": true},
+	"stat": {"-f": true, "-t": true},
 }
 
 // collectReadTargets records the read targets of a read, search, or vcs-read
