@@ -36,29 +36,40 @@ perl command carries `-n` or `-p` (alone or in a cluster such as `-ne`,
 bare operand is a data file and becomes a `ReadTarget` with Argv0
 `perl`.
 
-### Interpreter one-liners without a read loop: heuristic reads
+### Interpreter operands without a read loop: heuristic reads
 
-`python3 -c "..." file.go` and `perl -e '...' file.go` pass the operand
-to the program as an argument; whether the program reads it is
-undecidable statically. These operands become `ReadTarget` values
-anyway, by explicit consumer decision (2026-06-12): the operand shape is
-search-like in practice, and the consumer's tool policy plus its
+`python3 -c "..." file.go`, `perl -e '...' file.go`,
+`python3 -m mod file.go`, and `python3 script.py file.go` all pass the
+trailing operands to a program as arguments; whether the program reads
+them is undecidable statically. These operands become `ReadTarget`
+values anyway, by explicit consumer decision (2026-06-12): the operand
+shape is search-like in practice, and the consumer's tool policy plus its
 index-aware validator bound the blast radius (an unlisted argv0 or an
 unindexed path never blocks). This is a deliberate, documented exception
 to the no-fabricated-facts rule for read targets; the doc comment on the
 scan carries the rationale.
 
-Covered forms: `python -c`, `python3 -c`, `perl -e`/`-E` without
-`-n`/`-p`. The operands counted are the bare operands after the program
-flag's value, with flag values (`-I dir`, `-m mod`, and the like) skipped
-via the existing value-flag tables.
+The program slot, not a read target, is whichever comes first: the value
+of `-c`/`-e`/`-E`/`-m`, or the first bare operand (a script file like
+`script.py`). Every bare operand after the program slot is a data-file
+read target. Flag values (`-I dir`, and the like) are skipped via the
+existing value-flag tables. The script file in `python script.py` is the
+program being executed, so it is not itself a read target; its arguments
+are.
+
+Covered argv0 values: `python`, `python3`, `perl`. The consumer lists
+these in `search_tools` to opt in; gksyntax emitting the read never
+blocks on its own.
 
 ### Not covered
 
-- Running a script file (`python script.py`, `perl script.pl`) stays
-  unmodeled: executing a program is not a content search, and gating it
-  would block ordinary development in indexed repos.
-- `python -m module` stays unmodeled for the same reason.
+- The contents of an executed script or module. `python script.py` with
+  no operand, or a script that hardcodes an indexed path internally, is
+  not gated: the code lives in a file on disk, not in the command text,
+  so static command decomposition cannot see it. Reading a referenced
+  script off disk and parsing it is a separate, larger design (filesystem
+  reads on the hot path, missing files, symlinks, size limits) tracked as
+  a follow-up spec, not built here.
 - ruby, node, and other interpreters stay unmodeled until asked for.
 
 ### gawk -i inplace fix
@@ -80,8 +91,11 @@ Table tests in shelldecomp following the existing read-scan patterns:
 - `perl -e '...'` with no operand reads nothing.
 - `python3 -c "..." a.go` reads the operand.
 - `python3 -c "..."` alone reads nothing.
-- `python3 script.py a.go` reads nothing.
-- `python3 -m json.tool a.json` reads nothing.
+- `python3 script.py a.go` reads a.go; `script.py` is the program slot,
+  not a read target.
+- `python3 script.py` with no operand reads nothing.
+- `python3 -m mod a.go` reads a.go; `mod` is the program slot.
+- `python3 -m mod` with no operand reads nothing.
 - `perl -I lib -ne '...' a.go` skips the -I value and reads a.go.
 - `gawk -i inplace '{...}' a.go`: a.go is both read and write, and the
   program text is not a path.
