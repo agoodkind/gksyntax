@@ -32,10 +32,15 @@ decomposer. This design instead understands the program.
 
 ## Scope
 
-python only, this increment. python's tree-sitter grammar is already a
-pinned dependency, so no grammar onboarding is needed. awk, sed, and perl
-each reuse the machinery below and add one grammar plus one analyzer in
-their own increments.
+All four interpreter languages are in scope: python, awk, sed, and perl,
+including `python -m`. They ship as a sequence of commits, not because
+any is optional, but because they have a hard dependency order. python is
+built first because its grammar is already a pinned dependency and it
+carries the shared machinery (the resolver seam and the analyzer
+registry) that the other three reuse unchanged. awk, sed, and perl each
+then add one grammar following the dart and swift submodule precedent
+plus one analyzer. The build order is python, awk, sed, perl, by grammar
+onboarding cost; all four are delivered as part of this effort.
 
 ## Architecture
 
@@ -125,13 +130,29 @@ searcher, and a self-referential cycle. Existing python, perl, node,
 ruby, and awk suites stay green. agent-gate adds resolver-limit tests and
 live probes after the submodule pin bump.
 
-## Out of scope
+## Delivery sequence (all in scope)
 
-awk (Beaglefoot grammar), sed (mskelton grammar), and perl
-(tree-sitter-perl, generated parser, large committed scanner) each add
-one grammar submodule following the dart and swift precedent plus one
-`ReadAnalyzer`, reusing this seam unchanged. The perl `-n`/`-p` flag-fact
-reads and the `gawk -i inplace` read-scan fix ride along with their
-respective increments. Reading the contents of an imported python module
-(`python -m pkg`) stays unmodeled; only the command line and the directly
-executed script body are analyzed.
+Every item below is committed work in this effort, ordered by dependency
+and grammar-onboarding cost.
+
+1. python (this increment): the resolver seam, the analyzer registry, and
+   the python analyzer, including `python -m`. For `-m`, the command-line
+   operands are analyzed like any interpreter, and when the module name
+   resolves to a local file under the cwd, its body is read through the
+   resolver and analyzed the same as a script file; a module that resolves
+   only into installed site-packages is not a search of the repo and
+   yields no read.
+2. awk: add the Beaglefoot grammar as a submodule (dart pattern, committed
+   parser and scanner), add the awk analyzer for `getline < file` reads
+   and `print > file` writes inside the script, and fold in the
+   `gawk -i inplace` read-scan fix.
+3. sed: add the mskelton grammar as a submodule (committed parser, no
+   external scanner), add the sed analyzer for the `r file` read and
+   `w file` write commands inside the script.
+4. perl: add the tree-sitter-perl grammar as a submodule (swift pattern,
+   generate the parser, reuse the committed scanner), add the perl
+   analyzer, and fold in the `-n`/`-p` flag-fact reads.
+
+Reading the body of a python module imported with `import` (as opposed to
+run with `-m`) stays out of scope: that is arbitrary dependency
+resolution, not a command the agent issued.
