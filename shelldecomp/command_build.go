@@ -105,10 +105,12 @@ var valueFlagsByArgv0 = map[string]map[string]bool{
 	},
 	"ag": {"-G": true, "--file-search-regex": true},
 	// sed -e/-f supply the editing script; awk -f supplies the program and
-	// -F/-v supply the separator and a variable. Their values are not paths.
+	// -F/-v supply the separator and a variable. The gawk -i extension loads a
+	// library (-i inplace), so its value operand is not a data path either. None
+	// of these values are read paths.
 	"sed":  {"-e": true, "-f": true},
-	"awk":  {"-F": true, "-v": true, "-f": true},
-	"gawk": {"-F": true, "-v": true, "-f": true},
+	"awk":  {"-F": true, "-v": true, "-f": true, "-i": true},
+	"gawk": {"-F": true, "-v": true, "-f": true, "-i": true},
 	// jq's flags carry the program or named arguments, not data paths; stat's
 	// -f format and -t format string are not paths.
 	"jq":   {"-f": true, "--from-file": true, "--arg": true, "--argjson": true, "--slurpfile": true, "--rawfile": true},
