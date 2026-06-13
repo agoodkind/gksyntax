@@ -36,26 +36,34 @@ type cwdSpan struct {
 }
 
 // walker carries the parse state threaded through the recursive tree walk: the
-// source bytes, the remaining depth budget, and the accumulating result.
+// source bytes, the remaining depth budget, the accumulating result, the
+// optional resolver that reads an interpreter script off disk, and the visited
+// set that stops a self-referential script from looping.
 type walker struct {
-	source  []byte
-	homeDir string
-	depth   int
-	result  *Decomposition
+	source   []byte
+	homeDir  string
+	depth    int
+	result   *Decomposition
+	resolver FileResolver
+	visited  *visitedSet
 }
 
 // Parse decomposes a shell command starting in baseCwd, using homeDir to
 // expand a leading tilde. baseCwd is an absolute directory or "" when the
 // starting directory is unknown. Unparseable input becomes a single Opaque
-// decomposition; Parse never panics.
+// decomposition; Parse never panics. Parse reads no files off disk; use
+// ParseWithOptions with a FileResolver to analyze an interpreter's script file.
 func Parse(command string, baseCwd string, homeDir string) *Decomposition {
-	return parseShell([]byte(command), baseCwd, homeDir, DefaultMaxDepth)
+	return parseShellOpts([]byte(command), baseCwd, homeDir, DefaultMaxDepth, nil, newVisitedSet())
 }
 
-// parseShell is the depth-aware shell parser shared by Parse and the recursive
-// embedded-code paths. depth is the remaining recursion budget; at zero it
-// returns an Opaque decomposition without descending further.
-func parseShell(source []byte, baseCwd string, homeDir string, depth int) *Decomposition {
+// parseShellOpts is the depth-aware shell parser shared by Parse,
+// ParseWithOptions, and the recursive embedded-code paths. depth is the
+// remaining recursion budget; at zero it returns an Opaque decomposition
+// without descending further. resolver, when non-nil, lets an interpreter
+// script be read off disk; visited stops a self-referential script from
+// looping. Both are threaded onto the walker so nested parses keep the seam.
+func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, resolver FileResolver, visited *visitedSet) *Decomposition {
 	result := &Decomposition{
 		source:   source,
 		lang:     LangShell,
@@ -95,7 +103,14 @@ func parseShell(source []byte, baseCwd string, homeDir string, depth int) *Decom
 
 	currentScope := newScope(baseCwd, homeDir)
 	result.recordCwd(0, currentScope.cwd)
-	walk := &walker{source: source, homeDir: homeDir, depth: depth, result: result}
+	walk := &walker{
+		source:   source,
+		homeDir:  homeDir,
+		depth:    depth,
+		result:   result,
+		resolver: resolver,
+		visited:  visited,
+	}
 	walk.walkSequence(root, &currentScope)
 	return result
 }

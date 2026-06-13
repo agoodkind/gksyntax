@@ -20,6 +20,10 @@ type Embedding struct {
 	Lang      Lang
 	NewScope  bool
 	AsCommand bool
+	// Argv carries the bare operands that follow an interpreter's program slot,
+	// so an analyzer can resolve sys.argv[N] references inside the program. It is
+	// empty for embeddings whose language takes no argv (a heredoc, a -c shell).
+	Argv []string
 }
 
 // Dispatcher inspects a classified command and returns the embedded code it
@@ -63,11 +67,14 @@ func lookupDispatcher(argv0 string) (Dispatcher, bool) {
 func (walk *walker) dispatchEmbedded(node *tree_sitter.Node, command Command, args []rawArg, currentScope *scope) {
 	_ = node
 	_ = args
-	dispatcher, found := lookupDispatcher(command.Argv0)
-	if !found {
-		return
+	embeddings, handled := walk.pythonEmbeddings(command, currentScope)
+	if !handled {
+		dispatcher, found := lookupDispatcher(command.Argv0)
+		if !found {
+			return
+		}
+		embeddings = dispatcher(command, walk.source)
 	}
-	embeddings := dispatcher(command, walk.source)
 	for _, embedding := range embeddings {
 		region := walk.buildEmbeddedRegion(embedding, currentScope)
 		walk.result.embedded = append(walk.result.embedded, region)
@@ -106,7 +113,17 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 	if grammarName == "" {
 		return nil
 	}
-	return parseForeign(grammarName, []byte(embedding.Text), embedding.Lang, walk.depth-1)
+	return parseForeign(
+		grammarName,
+		[]byte(embedding.Text),
+		embedding.Lang,
+		walk.depth-1,
+		embedding.Argv,
+		currentScope.cwd,
+		walk.homeDir,
+		walk.resolver,
+		walk.visited,
+	)
 }
 
 // parseShellEmbedding parses a shell embedding's body. An AsCommand embedding is
@@ -117,7 +134,7 @@ func (walk *walker) parseShellEmbedding(embedding Embedding, currentScope *scope
 	if embedding.NewScope {
 		baseCwd = currentScope.child().cwd
 	}
-	return parseShell([]byte(embedding.Text), baseCwd, walk.homeDir, walk.depth-1)
+	return parseShellOpts([]byte(embedding.Text), baseCwd, walk.homeDir, walk.depth-1, walk.resolver, walk.visited)
 }
 
 // flagValueEmbedding extracts the value of a flag (for example -c or -e) as a
