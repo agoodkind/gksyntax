@@ -4,3 +4,6 @@
 [submodule "treesitter/grammars/swift/upstream"]
 	path = treesitter/grammars/swift/upstream
 	url = https://github.com/alex-pinkus/tree-sitter-swift.git
+[submodule "treesitter/grammars/awk/upstream"]
+	path = treesitter/grammars/awk/upstream
+	url = https://github.com/Beaglefoot/tree-sitter-awk

@@ -124,14 +124,14 @@ func TestSqlite3EmbeddingIsOpaque(t *testing.T) {
 	}
 }
 
-func TestAwkEmbeddingIsOpaque(t *testing.T) {
+func TestAwkEmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`awk '{print}' f`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangAwk {
 		t.Fatalf("awk region lang = %v, want LangAwk", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("awk embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("awk embedding should be parsed (awk grammar exists)")
 	}
 }
 
