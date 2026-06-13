@@ -1,113 +1,137 @@
-# Interpreter one-liner read targets
+# Interpreter program read analysis
 
 Date: 2026-06-12
-Status: draft, awaiting review
+Status: approved
+Increment: 1 of 4 (python). awk, sed, perl are named follow-on increments.
 
 ## Background
 
 shelldecomp parses a shell command and reports the files it reads as
-`ReadTarget` values. Consumers gate on those reads; agent-gate's
-code-search rule blocks a read of an indexed codebase and redirects the
-agent to semantic search. The rule's tool policy lives in consumer
-config (`search_tools`), so shelldecomp emitting a read for a tool never
-blocks anything by itself: the consumer must also list that tool.
+`ReadTarget` values. A consumer gates on those reads; agent-gate's
+code-search rule blocks a read of an lm-semantic-search-indexed codebase
+and redirects the agent to semantic search. The rule's tool policy lives
+in consumer config (`search_tools`), so shelldecomp emitting a read for a
+program never blocks anything on its own: the consumer must also list
+that program.
 
-Two gaps exist today.
+shelldecomp already understands code search embedded in shell: a
+`bash -c "grep ..."`, a `find ... -exec grep`, and a heredoc temp script
+all surface their inner reads because shelldecomp parses the embedded
+shell and reads the real command operands.
 
-Interpreter one-liners are not modeled. `perl -ne 'print if /x/' file.go`
-and `python3 -c "..." file.go` produce no read targets, so a consumer
-cannot gate them. Their inline programs are already extracted as
-embedded regions; only the file operands are missing.
+The gap this increment closes is interpreter programs. When an agent runs
+`python -c "..." file`, `python script.py file`, or a script that opens
+an indexed file by a path written inside the script, none of those reads
+are visible today. The program's behavior is either inline text the
+parser does not interpret, or a file on disk the parser never opens.
 
-The gawk in-place flag corrupts the read scan. For
-`gawk -i inplace '{...}' file.go`, the read scan consumes `inplace` as
-the program operand and then reports the real program `'{...}'` as a
-read path, fabricating a path that does not exist. (The write side
-handles `-i inplace` correctly.)
+A prior draft modeled every operand after the program as a blind read.
+That was rejected: it asserts a read without understanding the program,
+which a regex could do and which defeats the point of a syntax-aware
+decomposer. This design instead understands the program.
 
-## Design
+## Scope
 
-### perl with a read loop: guaranteed reads
+python only, this increment. python's tree-sitter grammar is already a
+pinned dependency, so no grammar onboarding is needed. awk, sed, and perl
+each reuse the machinery below and add one grammar plus one analyzer in
+their own increments.
 
-`perl -n` and `perl -p` wrap the program in a read loop over the file
-operands; reading them is documented flag semantics, not a guess. When a
-perl command carries `-n` or `-p` (alone or in a cluster such as `-ne`,
-`-pe`, `-lne`) together with a program from `-e`/`-E`, every remaining
-bare operand is a data file and becomes a `ReadTarget` with Argv0
-`perl`.
+## Architecture
 
-### Interpreter operands without a read loop: heuristic reads
+The per-language read analysis lives in shelldecomp, where the grammars
+and parse trees already are. The one new impure capability, reading a
+referenced script off disk, is an injected callback so shelldecomp stays
+a pure, testable parser and the consumer owns filesystem policy.
 
-`python3 -c "..." file.go`, `perl -e '...' file.go`,
-`python3 -m mod file.go`, and `python3 script.py file.go` all pass the
-trailing operands to a program as arguments; whether the program reads
-them is undecidable statically. These operands become `ReadTarget`
-values anyway, by explicit consumer decision (2026-06-12): the operand
-shape is search-like in practice, and the consumer's tool policy plus its
-index-aware validator bound the blast radius (an unlisted argv0 or an
-unindexed path never blocks). This is a deliberate, documented exception
-to the no-fabricated-facts rule for read targets; the doc comment on the
-scan carries the rationale.
+### Resolver seam
 
-The program slot, not a read target, is whichever comes first: the value
-of `-c`/`-e`/`-E`/`-m`, or the first bare operand (a script file like
-`script.py`). Every bare operand after the program slot is a data-file
-read target. Flag values (`-I dir`, and the like) are skipped via the
-existing value-flag tables. The script file in `python script.py` is the
-program being executed, so it is not itself a read target; its arguments
-are.
+shelldecomp gains an optional file resolver:
 
-Covered argv0 values: `python`, `python3`, `perl`. The consumer lists
-these in `search_tools` to opt in; gksyntax emitting the read never
-blocks on its own.
+    type FileResolver func(absPath string) (content []byte, ok bool)
 
-### Not covered
+threaded through a new `ParseWithOptions(command, baseCwd, Options)`
+entry point. `Parse(command, cwd, home)` is unchanged and passes no
+resolver, so existing behavior is identical. A resolver that returns
+`ok=false` (missing, too big, unreadable) contributes nothing; no read
+is fabricated. A nil resolver disables off-disk reads entirely.
 
-- The contents of an executed script or module. `python script.py` with
-  no operand, or a script that hardcodes an indexed path internally, is
-  not gated: the code lives in a file on disk, not in the command text,
-  so static command decomposition cannot see it. Reading a referenced
-  script off disk and parsing it is a separate, larger design (filesystem
-  reads on the hot path, missing files, symlinks, size limits) tracked as
-  a follow-up spec, not built here.
-- ruby, node, and other interpreters stay unmodeled until asked for.
+### Analyzer registry
 
-### gawk -i inplace fix
+A registry maps a `Lang` to a `ReadAnalyzer`:
 
-`-i` joins the awk/gawk value-flag table in the read scan so `inplace`
-is consumed as the flag's value, the real program is consumed as the
-program operand, and the file operand is reported once. Under
-`-i inplace` the file is also a write target, which lets a write-guard
-consumer treat it as an edit rather than a search; without the flag the
-file is a plain read.
+    type ReadAnalyzer func(AnalyzerInput) (reads []ReadTarget, writes []WriteTarget)
+
+`AnalyzerInput` carries the parsed tree root, the source bytes, the
+program's argv operands, the cwd, the home dir, the resolver, a visited
+set, and the remaining depth. The analyzer runs over the live
+tree-sitter tree inside `parseForeign`, populating the returned
+decomposition's reads and writes. A language with no registered analyzer
+behaves exactly as today.
+
+### One analyzer, two sources
+
+A python program reaches the analyzer the same way whether it is inline
+or on disk. For `python -c "code"`, the embedding text is `code`. For
+`python script.py`, shelldecomp resolves `script.py` through the resolver
+and the embedding text is the file's bytes. The trailing operands become
+the program's argv in both cases, so `sys.argv` maps correctly either
+way.
+
+## Python analyzer
+
+Detected reads: `open(p)` in read mode, `io.open(p)`,
+`pathlib.Path(p).read_text()` / `.read_bytes()`, `Path(p).open()` in read
+mode, and `fileinput.input([...])` or a bare `fileinput.input()`.
+
+Detected writes: `open(p, "w"|"a"|"x"|"...+")`,
+`Path(p).write_text()` / `.write_bytes()`, `Path(p).open()` in write
+mode. A write is not a search, so the consumer's write guard drops it.
+
+Subprocess recursion: `subprocess.run` / `call` / `check_call` /
+`check_output` / `Popen([list])` and `os.system(str)` whose program is a
+declared searcher or interpreter recurse back through shelldecomp, so
+`python -c "import os; os.system('grep -rn X /repo')"` surfaces /repo.
+
+Path argument resolution: a string literal resolves against the cwd;
+`sys.argv[N]` or `argv[N]` maps to the Nth program operand;
+`sys.argv[1:]` or a no-arg `fileinput.input()` means all operands. An
+f-string or any expression the analyzer cannot resolve to a literal or an
+argv slot yields no read. The analyzer never fabricates a path.
+
+## Recursion, cycles, limits
+
+The existing depth budget bounds nesting (python runs a script that
+shells out to grep, and so on). A visited set keyed by resolved absolute
+script path stops a script-runs-itself cycle. The resolver enforces
+existence and a size cap, so the hot path cannot be dragged into reading
+a huge or absent file.
+
+## Consumer integration (agent-gate)
+
+agent-gate supplies a disk resolver that reads a path only when it
+exists, is a regular file, and is under a size cap, and threads it into
+`ExtractCodeSearchTargets`. python region reads are folded into the
+existing embedded-recursion path when `python`/`python3` is in the rule's
+`search_tools`. The whole decision stays memoized by the existing exec
+verdict cache.
 
 ## Testing
 
-Table tests in shelldecomp following the existing read-scan patterns:
+shelldecomp table tests with a fake in-memory resolver cover inline `-c`,
+off-disk script (hardcoded path, argv mapping, relative path, resolver
+miss, nil resolver), writes, pathlib and fileinput, subprocess to a
+searcher, and a self-referential cycle. Existing python, perl, node,
+ruby, and awk suites stay green. agent-gate adds resolver-limit tests and
+live probes after the submodule pin bump.
 
-- `perl -ne 'print if /x/' a.go b.go` reads both operands.
-- `perl -lne '...' a.go` (cluster) reads the operand.
-- `perl -e '...' a.go` reads the operand (heuristic case).
-- `perl -e '...'` with no operand reads nothing.
-- `python3 -c "..." a.go` reads the operand.
-- `python3 -c "..."` alone reads nothing.
-- `python3 script.py a.go` reads a.go; `script.py` is the program slot,
-  not a read target.
-- `python3 script.py` with no operand reads nothing.
-- `python3 -m mod a.go` reads a.go; `mod` is the program slot.
-- `python3 -m mod` with no operand reads nothing.
-- `perl -I lib -ne '...' a.go` skips the -I value and reads a.go.
-- `gawk -i inplace '{...}' a.go`: a.go is both read and write, and the
-  program text is not a path.
-- `awk '/x/' a.go` keeps its current behavior (regression guard).
+## Out of scope
 
-agent-gate gains follow-up probe tests after the pin bump, plus
-`search_tools` config additions ("perl", "python", "python3"), in its
-own repo and review.
-
-## Rollout
-
-1. This spec is reviewed in gksyntax.
-2. TDD on this branch; `make check` green; push; review.
-3. agent-gate bumps the submodule pin in its own commit with probe
-   tests, config update, deploy, and live verification.
+awk (Beaglefoot grammar), sed (mskelton grammar), and perl
+(tree-sitter-perl, generated parser, large committed scanner) each add
+one grammar submodule following the dart and swift precedent plus one
+`ReadAnalyzer`, reusing this seam unchanged. The perl `-n`/`-p` flag-fact
+reads and the `gawk -i inplace` read-scan fix ride along with their
+respective increments. Reading the contents of an imported python module
+(`python -m pkg`) stays unmodeled; only the command line and the directly
+executed script body are analyzed.
