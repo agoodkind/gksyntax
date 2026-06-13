@@ -30,10 +30,11 @@ func registerShellEmbedders() {
 }
 
 // registerLanguageEmbedders installs dispatchers for interpreters that take a
-// foreign-language script through a flag.
+// foreign-language script through a flag. python and python3 are absent: they
+// flow through the walker's program handler (program_python.go), which emits an
+// embedding for both a -c body and a script file read off disk, with the trailing
+// operands carried as Argv so the analyzer can resolve sys.argv references.
 func registerLanguageEmbedders() {
-	Register("python", dispatchPythonDashC)
-	Register("python3", dispatchPythonDashC)
 	Register("perl", dispatchPerlDashE)
 	Register("node", dispatchNodeDashE)
 	Register("ruby", dispatchRubyDashE)
@@ -75,12 +76,6 @@ func dispatchXargs(cmd Command, source []byte) []Embedding {
 func dispatchParallel(cmd Command, source []byte) []Embedding {
 	_ = source
 	return firstPositionalEmbedding(cmd, LangShell, false, true)
-}
-
-// dispatchPythonDashC extracts a python -c script as a Python embedding.
-func dispatchPythonDashC(cmd Command, source []byte) []Embedding {
-	_ = source
-	return flagValueEmbedding(cmd, "-c", LangPython)
 }
 
 // dispatchPerlDashE extracts a perl -e script as a Perl embedding, which has no
@@ -348,9 +343,23 @@ func dockerValueFlag(token string) bool {
 }
 
 // parseForeign parses an embedded foreign-language script with its own grammar
-// into a decomposition that holds only the language tag and the parse outcome.
-// A nil grammar or a nil tree yields an opaque decomposition, never a panic.
-func parseForeign(grammarName string, source []byte, lang Lang, depth int) *Decomposition {
+// into a decomposition that holds the language tag, the parse outcome, and, when
+// an analyzer is registered for the language, the reads and writes the analyzer
+// derives from the live tree. A nil grammar or a nil tree yields an opaque
+// decomposition, never a panic. argv carries the program's trailing operands,
+// cwd and homeDir resolve its paths, resolver reads a nested script off disk,
+// and visited stops a self-referential nest.
+func parseForeign(
+	grammarName string,
+	source []byte,
+	lang Lang,
+	depth int,
+	argv []string,
+	cwd string,
+	homeDir string,
+	resolver FileResolver,
+	visited *visitedSet,
+) *Decomposition {
 	if depth <= 0 {
 		return opaqueDecomposition(source, lang)
 	}
@@ -368,7 +377,7 @@ func parseForeign(grammarName string, source []byte, lang Lang, depth int) *Deco
 		return opaqueDecomposition(source, lang)
 	}
 	defer tree.Close()
-	return &Decomposition{
+	result := &Decomposition{
 		source:   source,
 		lang:     lang,
 		commands: nil,
@@ -378,4 +387,18 @@ func parseForeign(grammarName string, source []byte, lang Lang, depth int) *Deco
 		cwdSpans: nil,
 		opaque:   false,
 	}
+	if analyzer, found := lookupAnalyzer(lang); found {
+		input := AnalyzerInput{
+			Root:     tree.RootNode(),
+			Source:   source,
+			Argv:     argv,
+			Cwd:      cwd,
+			Home:     homeDir,
+			Resolver: resolver,
+			Visited:  visited,
+			Depth:    depth,
+		}
+		result.reads, result.writes = analyzer(input)
+	}
+	return result
 }
