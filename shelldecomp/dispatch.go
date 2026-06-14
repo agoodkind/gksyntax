@@ -111,7 +111,7 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 	}
 	grammarName := embedding.Lang.grammarName()
 	if grammarName == "" {
-		return nil
+		return walk.analyzeGrammarlessEmbedding(embedding, currentScope)
 	}
 	return parseForeign(
 		grammarName,
@@ -124,6 +124,39 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 		walk.resolver,
 		walk.visited,
 	)
+}
+
+// analyzeGrammarlessEmbedding runs a registered analyzer over an embedding whose
+// language has no tree-sitter grammar, passing the program text as Source with a
+// nil Root. It serves a mini-language whose file commands are a small regular
+// sub-language read more reliably from text than from an inadequate grammar
+// (sed's r/w commands). A language with no registered analyzer returns nil, so
+// the region stays located but unparsed exactly as before.
+func (walk *walker) analyzeGrammarlessEmbedding(embedding Embedding, currentScope *scope) *Decomposition {
+	analyzer, ok := lookupAnalyzer(embedding.Lang)
+	if !ok {
+		return nil
+	}
+	reads, writes := analyzer(AnalyzerInput{
+		Root:     nil,
+		Source:   []byte(embedding.Text),
+		Argv:     embedding.Argv,
+		Cwd:      currentScope.cwd,
+		Home:     walk.homeDir,
+		Resolver: walk.resolver,
+		Visited:  walk.visited,
+		Depth:    walk.depth - 1,
+	})
+	return &Decomposition{
+		source:   []byte(embedding.Text),
+		lang:     embedding.Lang,
+		commands: nil,
+		reads:    reads,
+		writes:   writes,
+		embedded: nil,
+		cwdSpans: nil,
+		opaque:   false,
+	}
 }
 
 // parseShellEmbedding parses a shell embedding's body. An AsCommand embedding is

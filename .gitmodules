@@ -7,3 +7,4 @@
 [submodule "treesitter/grammars/awk/upstream"]
 	path = treesitter/grammars/awk/upstream
 	url = https://github.com/Beaglefoot/tree-sitter-awk
+	ignore = dirty
