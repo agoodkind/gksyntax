@@ -30,6 +30,7 @@ import (
 	tree_sitter_typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
 	tree_sitter_awk "goodkind.io/gksyntax/treesitter/grammars/awk"
 	tree_sitter_dart "goodkind.io/gksyntax/treesitter/grammars/dart"
+	tree_sitter_perl "goodkind.io/gksyntax/treesitter/grammars/perl"
 	tree_sitter_swift "goodkind.io/gksyntax/treesitter/grammars/swift"
 )
 
@@ -63,6 +64,7 @@ const (
 	grammarDart       grammarKey = "dart"
 	grammarSwift      grammarKey = "swift"
 	grammarAwk        grammarKey = "awk"
+	grammarPerl       grammarKey = "perl"
 )
 
 // extensionLanguages maps a file extension to a language id understood by
@@ -99,6 +101,8 @@ var extensionLanguages = map[string]string{
 	".bash":     "bash",
 	".json":     "json",
 	".awk":      "awk",
+	".pl":       "perl",
+	".pm":       "perl",
 	".css":      "css",
 	".html":     "html",
 	".htm":      "html",
@@ -152,6 +156,8 @@ func GrammarForLanguage(language string) (*tree_sitter.Language, bool) {
 		return tree_sitter.NewLanguage(tree_sitter_swift.Language()), true
 	case grammarAwk:
 		return tree_sitter.NewLanguage(tree_sitter_awk.Language()), true
+	case grammarPerl:
+		return tree_sitter.NewLanguage(tree_sitter_perl.Language()), true
 	default:
 		return nil, false
 	}

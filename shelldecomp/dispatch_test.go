@@ -69,14 +69,14 @@ func TestParallelEmbeddingIsParsedShell(t *testing.T) {
 	}
 }
 
-func TestPerlEmbeddingIsOpaque(t *testing.T) {
+func TestPerlEmbeddingIsParsedPerl(t *testing.T) {
 	decomposition := Parse(`perl -e "print 1"`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangPerl {
 		t.Fatalf("perl region lang = %v, want LangPerl", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("perl embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("perl embedding should be parsed (perl grammar exists)")
 	}
 }
 

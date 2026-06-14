@@ -21,17 +21,26 @@ include bootstrap.mk
 # ---------------------------------------------------------------------------
 # Grammar generation
 # ---------------------------------------------------------------------------
-# The Swift grammar submodule commits only its grammar definition, not the
-# generated parser, so the parser is produced from the pinned submodule by the
-# tree-sitter CLI. The other grammars commit their parser and need no step. The
-# generated files stay inside the submodule working tree (gitignored there) and
-# are never committed to this repository.
+# The Swift and Perl grammar submodules commit only their grammar definition
+# (and an external scanner), not the generated parser, so each parser is
+# produced from the pinned submodule by the tree-sitter CLI. The other grammars
+# commit their parser and need no step. The generated files stay inside the
+# submodule working tree (gitignored there) and are never committed to this
+# repository.
+#
+# Swift commits its own parser.c in upstream, so after generation the recipe
+# restores the tracked tree with `git checkout -- .`. Perl commits no parser.c,
+# so its generated parser.c and tree_sitter/ headers must be kept in place and
+# the recipe must not reset the Perl submodule tree.
 SWIFT_GRAMMAR_DIR := treesitter/grammars/swift/upstream
 SWIFT_GRAMMAR_DEF := $(SWIFT_GRAMMAR_DIR)/src/grammar.json
 SWIFT_GRAMMAR_PARSER := $(SWIFT_GRAMMAR_DIR)/src/parser.c
+PERL_GRAMMAR_DIR := treesitter/grammars/perl/upstream
+PERL_GRAMMAR_DEF := $(PERL_GRAMMAR_DIR)/src/grammar.json
+PERL_GRAMMAR_PARSER := $(PERL_GRAMMAR_DIR)/src/parser.c
 TREE_SITTER_ABI ?= 14
 # tree-sitter CLI lands here when the host has none on PATH, so a bare runner
-# with only Go can still generate the Swift parser. Gitignored.
+# with only Go can still generate the parsers. Gitignored.
 TREE_SITTER_LOCAL_DIR := $(CURDIR)/.bin
 
 .PHONY: grammars
@@ -39,6 +48,10 @@ TREE_SITTER_LOCAL_DIR := $(CURDIR)/.bin
 grammars:
 	@if [ ! -f "$(SWIFT_GRAMMAR_DEF)" ]; then \
 		echo "grammars: $(SWIFT_GRAMMAR_DIR) is empty; run 'git submodule update --init --recursive'"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(PERL_GRAMMAR_DEF)" ]; then \
+		echo "grammars: $(PERL_GRAMMAR_DIR) is empty; run 'git submodule update --init --recursive'"; \
 		exit 1; \
 	fi
 	@ts_bin="$$(command -v tree-sitter 2>/dev/null || true)"; \
@@ -52,9 +65,16 @@ grammars:
 		git -C "$(SWIFT_GRAMMAR_DIR)" checkout -- . >/dev/null 2>&1 || true; \
 	else \
 		echo "grammars: Swift parser already generated"; \
+	fi; \
+	if [ ! -f "$(PERL_GRAMMAR_PARSER)" ] || [ "$(PERL_GRAMMAR_DEF)" -nt "$(PERL_GRAMMAR_PARSER)" ]; then \
+		echo "grammars: generating Perl parser (abi $(TREE_SITTER_ABI))"; \
+		( cd "$(PERL_GRAMMAR_DIR)" && "$$ts_bin" generate src/grammar.json --abi $(TREE_SITTER_ABI) ); \
+	else \
+		echo "grammars: Perl parser already generated"; \
 	fi
 
-# Compiling, vetting, linting, and govulncheck all build the Swift grammar
-# package, so they need the generated parser. The order-only prerequisite
-# generates it first on a fresh checkout without forcing rebuilds.
+# Compiling, vetting, linting, and govulncheck all build the Swift and Perl
+# grammar packages, so they need the generated parsers. The order-only
+# prerequisite generates them first on a fresh checkout without forcing
+# rebuilds.
 build build-check check test lint vet govulncheck: | grammars

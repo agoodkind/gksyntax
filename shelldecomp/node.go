@@ -75,7 +75,9 @@ func (lang Lang) grammarName() string {
 		return "ruby"
 	case LangAwk:
 		return "awk"
-	case LangUnknown, LangPerl, LangAppleScript, LangSQL, LangJQ,
+	case LangPerl:
+		return "perl"
+	case LangUnknown, LangAppleScript, LangSQL, LangJQ,
 		LangSed, LangRegex, LangOpaque:
 		return ""
 	default:

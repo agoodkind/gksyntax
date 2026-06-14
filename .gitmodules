@@ -8,3 +8,6 @@
 	path = treesitter/grammars/awk/upstream
 	url = https://github.com/Beaglefoot/tree-sitter-awk
 	ignore = dirty
+[submodule "treesitter/grammars/perl/upstream"]
+	path = treesitter/grammars/perl/upstream
+	url = https://github.com/tree-sitter-perl/tree-sitter-perl
