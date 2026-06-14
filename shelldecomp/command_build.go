@@ -20,6 +20,7 @@ func (walk *walker) walkCommand(node *tree_sitter.Node, currentScope *scope, fir
 	}
 
 	walk.collectReadTargets(command, args, currentScope, firstStage)
+	walk.perlOperandReads(command, currentScope)
 	walk.collectInlineWrites(command, args, currentScope)
 	walk.dispatchEmbedded(node, command, args, currentScope)
 }
