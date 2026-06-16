@@ -8,5 +8,7 @@ permissions:
 jobs:
   go:
     uses: agoodkind/go-makefile/.github/workflows/_ci.yml@main
+    with:
+      submodules: recursive
     permissions:
       contents: read
