@@ -12,3 +12,4 @@ jobs:
       submodules: recursive
     permissions:
       contents: read
+      id-token: write
