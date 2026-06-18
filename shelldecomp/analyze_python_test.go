@@ -349,6 +349,30 @@ func TestPythonVariableBoundLiteralRead(t *testing.T) {
 	}
 }
 
+// TestPythonReassignedVarClearsStaleBinding covers that a variable reassigned to
+// a non-path expression drops its earlier literal binding, so a later open does
+// not resolve to the stale path.
+func TestPythonReassignedVarClearsStaleBinding(t *testing.T) {
+	command := `python -c "x = 'a.go'; x = compute(); open(x)"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (binding cleared by reassignment)", got)
+	}
+}
+
+// TestPythonVariablePathOpen covers Path(...).open() through a variable receiver:
+// p = pathlib.Path('x.go'); p.open() resolves the file the variable names.
+func TestPythonVariablePathOpen(t *testing.T) {
+	command := `python -c "import pathlib; p = pathlib.Path('x.go'); p.open()"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/repo/x.go"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
 func TestPythonSelfReferentialCycleTerminates(t *testing.T) {
 	resolver := fakeResolver(map[string]string{
 		"/repo/s.py": `import subprocess; subprocess.run(["python","/repo/s.py"])`,

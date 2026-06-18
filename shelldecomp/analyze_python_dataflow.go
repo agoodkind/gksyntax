@@ -80,22 +80,31 @@ func (collector *pythonCollector) buildPathVars(root *tree_sitter.Node) {
 			continue
 		}
 		name := left.Utf8Text(collector.in.Source)
-		if _, ok := stringLiteralValue(right, collector.in.Source); ok {
-			collector.pathVars[name] = right
-			continue
-		}
-		if right.Kind() != "call" {
-			continue
-		}
-		function := right.ChildByFieldName("function")
-		if function == nil || !isPathConstructor(function, collector.in.Source) {
-			continue
-		}
-		arg := positionalArg(right.ChildByFieldName("arguments"), 0)
-		if arg != nil {
-			collector.pathVars[name] = arg
+		// Last write wins, and a reassignment to a non-path expression clears the
+		// binding so a later read does not resolve to a stale path.
+		if pathNode := collector.pathBindingNode(right); pathNode != nil {
+			collector.pathVars[name] = pathNode
+		} else {
+			delete(collector.pathVars, name)
 		}
 	}
+}
+
+// pathBindingNode returns the node naming the path a name is bound to when an
+// assignment's right-hand side is a string literal or a Path(...) constructor,
+// or nil for any other expression so the caller clears a stale binding.
+func (collector *pythonCollector) pathBindingNode(right *tree_sitter.Node) *tree_sitter.Node {
+	if _, ok := stringLiteralValue(right, collector.in.Source); ok {
+		return right
+	}
+	if right.Kind() != "call" {
+		return nil
+	}
+	function := right.ChildByFieldName("function")
+	if function == nil || !isPathConstructor(function, collector.in.Source) {
+		return nil
+	}
+	return positionalArg(right.ChildByFieldName("arguments"), 0)
 }
 
 // buildEnumTaint propagates directory taint from enumeration sources to the names

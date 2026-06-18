@@ -220,14 +220,19 @@ func (collector *pythonCollector) classifyPathMethod(object *tree_sitter.Node, i
 }
 
 // classifyPathOpen records a Path(...).open(mode) access, reading by default and
-// writing when the mode argument requests it. A receiver that is not a Path(...)
-// call is ignored, so a plain object.open() is not mistaken for a file open.
+// writing when the mode argument requests it. When the receiver is not an inline
+// Path(...) call, a read still resolves through the receiver expression, so a
+// `p.open()` whose `p` is a variable bound to a Path or an enumerated walk value
+// surfaces its target; a plain object.open() that resolves to nothing is ignored.
 func (collector *pythonCollector) classifyPathOpen(object *tree_sitter.Node, arguments *tree_sitter.Node) {
+	mode := firstStringArg(arguments, collector.in.Source)
 	pathNode := pathConstructorArg(object, collector.in.Source)
 	if pathNode == nil {
+		if !isWriteMode(mode) {
+			collector.addReads(object)
+		}
 		return
 	}
-	mode := firstStringArg(arguments, collector.in.Source)
 	if isWriteMode(mode) {
 		collector.addWrites(pathNode)
 		return
