@@ -18,12 +18,17 @@ func init() {
 	RegisterAnalyzer(LangPython, analyzePython)
 }
 
-// pythonReadMethods are the pathlib.Path methods that read the file the Path
-// names. The receiver is the Path(...) call; the argument that holds the path is
-// the Path constructor's first operand, not the method's arguments.
+// pythonReadMethods are the methods that read the file their receiver names. The
+// pathlib forms (read_text, read_bytes) take the path from the receiver's
+// Path(...) constructor; the file-object forms (read, readline, readlines) take
+// it from a receiver that is itself a path expression, which matters when that
+// receiver is a variable bound to an enumerated path.
 var pythonReadMethods = map[string]bool{
 	"read_text":  true,
 	"read_bytes": true,
+	"read":       true,
+	"readline":   true,
+	"readlines":  true,
 }
 
 // pythonWriteMethods are the pathlib.Path methods that write the file the Path
@@ -50,19 +55,41 @@ var pythonSubprocessFuncs = map[string]bool{
 // recurses into. It resolves a path argument that is a string literal, a
 // sys.argv index, or a sys.argv slice; any other argument is dropped rather than
 // turned into a fabricated path. Recursion stops once the depth budget is spent.
+//
+// Before the walk it builds two def-use maps so the gate decision is the
+// principle "does this program read the contents of files it discovered by
+// walking the filesystem", not a fixed idiom list: pathVars maps a name assigned
+// a string literal or a Path(...) constructor to the underlying path node, and
+// enumTaint maps a name bound to a directory-enumeration result to the walked
+// directory. A content-read sink whose path traces back to an enumeration then
+// resolves the walked directory as the read target.
 func analyzePython(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
-	collector := &pythonCollector{in: in}
+	collector := &pythonCollector{
+		in:        in,
+		pathVars:  map[string]*tree_sitter.Node{},
+		enumTaint: map[string][]string{},
+		seenRead:  map[string]bool{},
+		seenWrite: map[string]bool{},
+	}
+	collector.buildPathVars(in.Root)
+	collector.buildEnumTaint(in.Root)
 	collector.walk(in.Root)
 	return collector.reads, collector.writes
 }
 
 // pythonCollector accumulates the read and write targets found while walking one
 // python program tree, carrying the analyzer input needed to resolve paths and
-// recurse into child commands.
+// recurse into child commands. pathVars and enumTaint are the def-use maps the
+// pre-passes build; seenRead and seenWrite dedupe targets so two sinks naming the
+// same resolved path record it once.
 type pythonCollector struct {
-	in     AnalyzerInput
-	reads  []ReadTarget
-	writes []WriteTarget
+	in        AnalyzerInput
+	reads     []ReadTarget
+	writes    []WriteTarget
+	pathVars  map[string]*tree_sitter.Node
+	enumTaint map[string][]string
+	seenRead  map[string]bool
+	seenWrite map[string]bool
 }
 
 // walk descends a node and its children, classifying each call it meets. It is a
@@ -173,10 +200,16 @@ func (collector *pythonCollector) classifyOpen(arguments *tree_sitter.Node) {
 
 // classifyPathMethod records a pathlib Path(...).read_text or .write_text style
 // access. The receiver object is the Path(...) call; its constructor's first
-// argument names the file.
+// argument names the file. When the receiver is not a Path(...) call (a file
+// object from open(), or a variable bound to an enumerated path), a read still
+// resolves through the receiver expression so a `p.read_text()` whose `p` came
+// from a directory walk surfaces the walked directory.
 func (collector *pythonCollector) classifyPathMethod(object *tree_sitter.Node, isRead bool) {
 	pathNode := pathConstructorArg(object, collector.in.Source)
 	if pathNode == nil {
+		if isRead {
+			collector.addReads(object)
+		}
 		return
 	}
 	if isRead {
@@ -278,21 +311,60 @@ func (collector *pythonCollector) recurseCommandLine(commandLine string) {
 	collector.writes = append(collector.writes, child.WriteTargets()...)
 }
 
-// addReads resolves a path-argument node into one or more read targets and
-// records them. A node that resolves to nothing (an f-string, a variable, an
-// out-of-range argv index) records nothing.
+// addReads resolves a read-sink's path-expression node into one or more read
+// targets and records them, deduped by resolved path. Resolution tries, in
+// order: a literal or sys.argv path; a variable bound to a literal path; an
+// f-string's literal directory prefix; and finally the directory of an
+// enumeration the node's value traces back to. A node that resolves to nothing
+// (an opaque expression, an unknown variable) records nothing rather than a
+// fabricated path.
 func (collector *pythonCollector) addReads(node *tree_sitter.Node) {
-	for _, resolved := range collector.resolvePathArg(node) {
+	for _, resolved := range collector.resolveReadNodes(node) {
+		if collector.seenRead[resolved] {
+			continue
+		}
+		collector.seenRead[resolved] = true
 		collector.reads = append(collector.reads, collector.readTarget(resolved, node))
 	}
 }
 
 // addWrites resolves a path-argument node into one or more write targets and
-// records them.
+// records them, deduped by resolved path. Writes use literal/argv resolution
+// only: a discovered file being written is an edit, not a content search the
+// semantic index could answer.
 func (collector *pythonCollector) addWrites(node *tree_sitter.Node) {
 	for _, resolved := range collector.resolvePathArg(node) {
+		if collector.seenWrite[resolved] {
+			continue
+		}
+		collector.seenWrite[resolved] = true
 		collector.writes = append(collector.writes, collector.writeTarget(resolved, node))
 	}
+}
+
+// resolveReadNodes resolves a read sink's path expression into zero or more
+// absolute paths, widening the literal-only resolvePathArg with the def-use maps:
+// a variable bound to a literal path, an f-string's literal directory prefix, and
+// the directory of an enumeration the value traces back to. The order is
+// most-specific first, so a concrete file path wins over a walked directory.
+func (collector *pythonCollector) resolveReadNodes(node *tree_sitter.Node) []string {
+	if node == nil {
+		return nil
+	}
+	if literal := collector.resolvePathArg(node); len(literal) > 0 {
+		return literal
+	}
+	if node.Kind() == "identifier" {
+		if bound, ok := collector.pathVars[node.Utf8Text(collector.in.Source)]; ok {
+			if resolved := collector.resolvePathArg(bound); len(resolved) > 0 {
+				return resolved
+			}
+		}
+	}
+	if prefix := collector.fstringPrefixDir(node); len(prefix) > 0 {
+		return prefix
+	}
+	return collector.taintDirs(node)
 }
 
 // addArgvReads records every argv entry as a read target, used by a bare

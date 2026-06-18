@@ -240,6 +240,115 @@ func TestPythonOsSystemRecursion(t *testing.T) {
 	}
 }
 
+// pythonHeredoc wraps a multi-line python program in a `python3 - <<'PY'`
+// heredoc so a test can exercise statement-form programs (for-loops, def) the
+// way an agent actually writes them, not just `-c` one-liners.
+func pythonHeredoc(body string) string {
+	return "python3 - <<'PY'\n" + body + "\nPY\n"
+}
+
+// TestPythonRglobReadResolvesToDir is the exact leaked shape: a recursive walk
+// of cwd whose discovered paths are read for their contents resolves to the
+// walked directory, so the index-aware validator can block it.
+func TestPythonRglobReadResolvesToDir(t *testing.T) {
+	body := "import pathlib\n" +
+		"root = pathlib.Path(\".\")\n" +
+		"for p in sorted(root.rglob(\"*\")):\n" +
+		"    text = p.read_text()\n"
+	decomposition := ParseWithOptions(pythonHeredoc(body), "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/repo"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestPythonOsWalkJoinOpenResolvesToDir covers os.walk with a tuple target and
+// os.path.join feeding open: the walked directory is the read target.
+func TestPythonOsWalkJoinOpenResolvesToDir(t *testing.T) {
+	body := "import os\n" +
+		"for d, dirs, files in os.walk(\"/abs/repo\"):\n" +
+		"    for f in files:\n" +
+		"        open(os.path.join(d, f)).read()\n"
+	decomposition := ParseWithOptions(pythonHeredoc(body), "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/abs/repo"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestPythonGlobInHelperResolvesToDir covers a read buried in a helper function
+// fed by glob.glob with a ** pattern: the link is def-use, not adjacency, and
+// the pattern's pre-wildcard root (cwd here) is the target.
+func TestPythonGlobInHelperResolvesToDir(t *testing.T) {
+	body := "import glob\n" +
+		"def scan():\n" +
+		"    for p in glob.glob(\"**/*.py\", recursive=True):\n" +
+		"        open(p).read()\n" +
+		"scan()\n"
+	decomposition := ParseWithOptions(pythonHeredoc(body), "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/repo"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestPythonComprehensionRglobResolvesToDir covers the comprehension for-clause
+// taint path: [p.read_text() for p in Path('.').rglob('*')].
+func TestPythonComprehensionRglobResolvesToDir(t *testing.T) {
+	command := `python -c "import pathlib; [p.read_text() for p in pathlib.Path('.').rglob('*')]"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/repo"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestPythonIterdirNamesOnlyNoDir is a negative: enumerating a directory and
+// using only the names (no content read) is a filename listing, not a search,
+// so no directory target is emitted.
+func TestPythonIterdirNamesOnlyNoDir(t *testing.T) {
+	body := "import pathlib\n" +
+		"for p in pathlib.Path(\".\").iterdir():\n" +
+		"    print(p.name)\n"
+	decomposition := ParseWithOptions(pythonHeredoc(body), "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (names only, no content read)", got)
+	}
+}
+
+// TestPythonEnumerationPlusUnrelatedLiteralRead is a negative for over-firing:
+// an enumeration whose paths never reach a read sink must not emit the walked
+// directory, while a separate literal open is still a named-file read.
+func TestPythonEnumerationPlusUnrelatedLiteralRead(t *testing.T) {
+	body := "import pathlib\n" +
+		"for p in pathlib.Path(\".\").iterdir():\n" +
+		"    pass\n" +
+		"open(\"a.txt\")\n"
+	decomposition := ParseWithOptions(pythonHeredoc(body), "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/repo/a.txt"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v (literal only, no walked dir)", got, want)
+	}
+}
+
+// TestPythonVariableBoundLiteralRead covers the def-use resolution of a
+// variable assigned a string literal then opened: open(x) where x = "rel.go".
+func TestPythonVariableBoundLiteralRead(t *testing.T) {
+	command := `python -c "x = 'rel.go'; open(x)"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/repo/rel.go"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
 func TestPythonSelfReferentialCycleTerminates(t *testing.T) {
 	resolver := fakeResolver(map[string]string{
 		"/repo/s.py": `import subprocess; subprocess.run(["python","/repo/s.py"])`,
