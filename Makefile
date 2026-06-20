@@ -11,6 +11,11 @@ LIBRARY := 1
 # Pipeline modules.
 GO_MK_MODULES := go-build.mk
 
+# Codegen hook: go.mk runs the grammars target as an order-only prerequisite of
+# every build, lint, vet, test, and govulncheck target, so the generated Swift
+# parser exists before any target compiles the grammar packages.
+GO_MK_GENERATE := grammars
+
 # bootstrap.mk fetches go.mk + golangci.yml + every module in GO_MK_MODULES
 # at parse time and -includes them. Update path: edit go-makefile/bootstrap.mk,
 # then refresh consumer copies (one-off cp; not enshrined as infrastructure).
@@ -73,8 +78,7 @@ grammars:
 		echo "grammars: Perl parser already generated"; \
 	fi
 
-# Compiling, vetting, linting, and govulncheck all build the Swift and Perl
-# grammar packages, so they need the generated parsers. The order-only
-# prerequisite generates them first on a fresh checkout without forcing
-# rebuilds.
-build build-check check test lint vet govulncheck: | grammars
+# The order-only prerequisite that runs grammars before every compile, vet,
+# lint, test, and govulncheck target (including the lint split targets the CI
+# matrix calls directly) is wired centrally in go.mk via GO_MK_GENERATE (set
+# above), so no per-target list is maintained here.
