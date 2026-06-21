@@ -165,7 +165,7 @@ func (walk *walker) analyzeGrammarlessEmbedding(embedding Embedding, currentScop
 func (walk *walker) parseShellEmbedding(embedding Embedding, currentScope *scope) *Decomposition {
 	baseCwd := currentScope.cwd
 	if embedding.NewScope {
-		baseCwd = currentScope.child().cwd
+		baseCwd = currentScope.cwd
 	}
 	return parseShellOpts([]byte(embedding.Text), baseCwd, walk.homeDir, walk.depth-1, walk.resolver, walk.visited)
 }

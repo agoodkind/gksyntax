@@ -25,7 +25,7 @@ func (walk *walker) handleFileRedirect(node *tree_sitter.Node, command Command, 
 		destination.Kind() == "process_substitution" || destination.Kind() == "command_substitution" {
 		return
 	}
-	token := resolveArgNode(destination, walk.source)
+	token := resolveArgNode(destination, walk.source, currentScope)
 	walk.result.writes = append(walk.result.writes, resolveWriteTarget(command.Argv0, token, currentScope))
 }
 
@@ -229,6 +229,7 @@ func resolveWriteTarget(argv0 string, token rawArg, currentScope *scope) WriteTa
 			Resolvable: false,
 			Argv0:      argv0,
 			Cwd:        currentScope.cwd,
+			ScopeID:    currentScope.id,
 			Raw:        token.text,
 		}
 	}
@@ -239,6 +240,7 @@ func resolveWriteTarget(argv0 string, token rawArg, currentScope *scope) WriteTa
 			Resolvable: false,
 			Argv0:      argv0,
 			Cwd:        currentScope.cwd,
+			ScopeID:    currentScope.id,
 			Raw:        token.text,
 		}
 	}
@@ -247,6 +249,7 @@ func resolveWriteTarget(argv0 string, token rawArg, currentScope *scope) WriteTa
 		Resolvable: true,
 		Argv0:      argv0,
 		Cwd:        currentScope.cwd,
+		ScopeID:    currentScope.id,
 		Raw:        token.text,
 	}
 }
