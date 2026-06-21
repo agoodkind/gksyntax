@@ -20,6 +20,7 @@ type Decomposition struct {
 	source   []byte
 	lang     Lang
 	commands []Command
+	assigns  []Assignment
 	reads    []ReadTarget
 	writes   []WriteTarget
 	embedded []EmbeddedRegion
@@ -40,12 +41,13 @@ type cwdSpan struct {
 // optional resolver that reads an interpreter script off disk, and the visited
 // set that stops a self-referential script from looping.
 type walker struct {
-	source   []byte
-	homeDir  string
-	depth    int
-	result   *Decomposition
-	resolver FileResolver
-	visited  *visitedSet
+	source      []byte
+	homeDir     string
+	depth       int
+	result      *Decomposition
+	resolver    FileResolver
+	visited     *visitedSet
+	nextScopeID int
 }
 
 // Parse decomposes a shell command starting in baseCwd, using homeDir to
@@ -68,6 +70,7 @@ func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, re
 		source:   source,
 		lang:     LangShell,
 		commands: nil,
+		assigns:  nil,
 		reads:    nil,
 		writes:   nil,
 		embedded: nil,
@@ -101,15 +104,16 @@ func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, re
 		return opaqueDecomposition(source, LangShell)
 	}
 
-	currentScope := newScope(baseCwd, homeDir)
+	currentScope := newScope(baseCwd, homeDir, 0)
 	result.recordCwd(0, currentScope.cwd)
 	walk := &walker{
-		source:   source,
-		homeDir:  homeDir,
-		depth:    depth,
-		result:   result,
-		resolver: resolver,
-		visited:  visited,
+		source:      source,
+		homeDir:     homeDir,
+		depth:       depth,
+		result:      result,
+		resolver:    resolver,
+		visited:     visited,
+		nextScopeID: 1,
 	}
 	walk.walkSequence(root, &currentScope)
 	return result
@@ -123,6 +127,7 @@ func opaqueDecomposition(source []byte, lang Lang) *Decomposition {
 		source:   source,
 		lang:     lang,
 		commands: nil,
+		assigns:  nil,
 		reads:    nil,
 		writes:   nil,
 		embedded: nil,
@@ -165,7 +170,7 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 		return
 	}
 	if kind == kindSubshell {
-		childScope := currentScope.child()
+		childScope := currentScope.child(walk.allocateScopeID())
 		walk.walkSequence(node, &childScope)
 		return
 	}
@@ -177,7 +182,18 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 		walk.walkCommand(node, currentScope, firstStage)
 		return
 	}
+	if kind == kindVariableAssignment {
+		walk.walkAssignment(node, currentScope)
+		return
+	}
 	walk.walkSequence(node, currentScope)
+}
+
+// allocateScopeID returns a parse-local identifier for a child shell scope.
+func (walk *walker) allocateScopeID() int {
+	id := walk.nextScopeID
+	walk.nextScopeID++
+	return id
 }
 
 // walkPipeline walks the stages of a pipeline in the shared scope, marking
@@ -208,7 +224,7 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, 
 		walk.walkSequence(node, currentScope)
 		return
 	}
-	argv0, args := extractCommand(body, walk.source)
+	argv0, args := extractCommand(body, walk.source, currentScope)
 	command := walk.buildCommand(body, argv0, args, currentScope)
 
 	if command.Kind == CommandKindNav && command.Argv0 == "cd" {
