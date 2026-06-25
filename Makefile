@@ -15,6 +15,16 @@ GO_MK_MODULES := go-build.mk
 # every build, lint, vet, test, and govulncheck target, so the generated Swift
 # parser exists before any target compiles the grammar packages.
 GO_MK_GENERATE := grammars
+GO_MK_GENERATE_INPUTS := treesitter/grammars scripts
+GO_MK_GENERATE_OUTPUTS := \
+	treesitter/grammars/swift/upstream/src/parser.c \
+	treesitter/grammars/swift/upstream/src/tree_sitter/parser.h \
+	treesitter/grammars/swift/upstream/src/tree_sitter/array.h \
+	treesitter/grammars/swift/upstream/src/tree_sitter/alloc.h \
+	treesitter/grammars/perl/upstream/src/parser.c \
+	treesitter/grammars/perl/upstream/src/node-types.json \
+	treesitter/grammars/perl/upstream/src/tree_sitter/parser.h \
+	treesitter/grammars/perl/upstream/src/tree_sitter/array.h
 
 # bootstrap.mk fetches go.mk + golangci.yml + every module in GO_MK_MODULES
 # at parse time and -includes them. Update path: edit go-makefile/bootstrap.mk,
