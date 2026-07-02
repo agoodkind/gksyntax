@@ -224,16 +224,42 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, 
 		walk.walkSequence(node, currentScope)
 		return
 	}
-	argv0, args := extractCommand(body, walk.source, currentScope)
-	command := walk.buildCommand(body, argv0, args, currentScope)
 
-	if command.Kind == CommandKindNav && command.Argv0 == "cd" {
-		currentScope.applyCd(command.Args)
-		walk.result.recordCwd(body.StartByte(), currentScope.cwd)
+	// tree-sitter-bash attaches a trailing redirect to the whole preceding
+	// chain, so `cd X && git Y 2>&1` parses as a redirected_statement whose body
+	// is the && list (or a pipeline), not a bare command. Extracting a command
+	// from that compound body yields an empty argv0 and drops the inner cd and
+	// git, which erases the cwd model. Recurse into a list or pipeline body so its
+	// inner commands, cd effects, and targets are classified, then bind the
+	// redirects to the last command, which is what the redirect attaches to.
+	//
+	// A group ({ ...; }) or subshell body is left to the simple-command path
+	// below: its redirect applies to the whole group and is set up in the cwd
+	// before the group runs, so it must resolve against the unmutated scope. The
+	// simple path does not walk the group's inner cd, so the scope stays put.
+	var command Command
+	if kind := nodeKind(body.Kind()); kind == kindList || kind == kindPipeline {
+		before := len(walk.result.commands)
+		walk.walkNode(body, currentScope, firstStage)
+		// Bind the redirect to the last command this body actually added, not to
+		// an unrelated earlier command from the outer walk. A body that adds no
+		// command (only assignments, say) leaves command zero so the redirect
+		// binds to nothing rather than mis-binding.
+		if len(walk.result.commands) > before {
+			command = walk.result.commands[len(walk.result.commands)-1]
+		}
+	} else {
+		argv0, args := extractCommand(body, walk.source, currentScope)
+		command = walk.buildCommand(body, argv0, args, currentScope)
+
+		if command.Kind == CommandKindNav && command.Argv0 == "cd" {
+			currentScope.applyCd(command.Args)
+			walk.result.recordCwd(body.StartByte(), currentScope.cwd)
+		}
+		walk.collectReadTargets(command, args, currentScope, firstStage)
+		walk.collectInlineWrites(command, args, currentScope)
+		walk.dispatchEmbedded(body, command, args, currentScope)
 	}
-	walk.collectReadTargets(command, args, currentScope, firstStage)
-	walk.collectInlineWrites(command, args, currentScope)
-	walk.dispatchEmbedded(body, command, args, currentScope)
 
 	for index := range node.ChildCount() {
 		child := node.Child(index)
