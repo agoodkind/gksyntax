@@ -1,6 +1,6 @@
 module goodkind.io/gksyntax
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/tree-sitter-grammars/tree-sitter-kotlin v1.1.0
