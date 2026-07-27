@@ -121,15 +121,25 @@ func (collector *rubyCollector) classifyElementReference(node *tree_sitter.Node)
 }
 
 // classifyFileOpen records a File.open call as a read or a write by its mode
-// argument. The first positional argument is the path; the second, when a
-// plain string literal beginning w or a, requests writing. A missing mode, a
-// mode beginning r, or a mode that is not a resolvable literal all default to
-// a read, matching File.open's own default mode.
+// argument. The first positional argument is the path. A missing mode
+// defaults to a read, matching File.open's own default mode. A mode that is a
+// plain string literal is a write when it begins w or a, and a read
+// otherwise (a literal beginning r, or any other literal). A mode argument
+// that is present but not a resolvable literal, such as a variable, cannot be
+// classified as read or write without guessing, so the call is dropped
+// entirely rather than defaulting it to a read the way an absent mode is.
 func (collector *rubyCollector) classifyFileOpen(arguments *tree_sitter.Node) {
 	pathNode := rubyPositionalArg(arguments, 0)
 	modeNode := rubyPositionalArg(arguments, 1)
+	if modeNode == nil {
+		collector.addRead(pathNode)
+		return
+	}
 	mode, ok := rubyStringLiteralValue(modeNode, collector.in.Source)
-	if ok && rubyIsWriteMode(mode) {
+	if !ok {
+		return
+	}
+	if rubyIsWriteMode(mode) {
 		collector.addWrite(pathNode)
 		return
 	}
@@ -247,15 +257,27 @@ func rubyPositionalArg(arguments *tree_sitter.Node, n int) *tree_sitter.Node {
 }
 
 // rubyStringLiteralValue returns the content of a ruby string literal and
-// true when the node is a plain literal: a string whose content children are
-// only string_content and escape_sequence, with no interpolation. A string
-// with an interpolation child, or any non-string node, returns ("", false).
+// true when the node is a plain literal with no interpolation and no escape
+// of any kind. A string with an interpolation child, or any non-string node,
+// returns ("", false). A raw backslash anywhere in the string's source text
+// also returns ("", false), rather than decoding it: a double-quoted escape
+// (\n, \\, \#{) is its own escape_sequence child whose Ruby-decoded value
+// differs from its raw source text, and a single-quoted escape (\', \\) is
+// not split into its own node at all, since tree-sitter-ruby folds it
+// straight into string_content. Decoding only the escape_sequence case would
+// still mis-resolve the single-quoted one, and a mis-resolved value is worse
+// than a dropped one: it records Resolvable: true at a path the program
+// never touches, which is the fabricated-path failure the drop-never-
+// fabricate rule exists to prevent. So any backslash drops the whole string.
 // The surrounding quote tokens are anonymous nodes and are skipped without
 // checking their kind, since the ruby grammar does not distinguish a single
 // from a double quote by kind the way analyze_python.go's string_start and
 // string_end do.
 func rubyStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool) {
 	if node == nil || node.Kind() != "string" {
+		return "", false
+	}
+	if strings.ContainsRune(node.Utf8Text(source), '\\') {
 		return "", false
 	}
 	var content strings.Builder
@@ -268,7 +290,7 @@ func rubyStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 		if kind == "interpolation" {
 			return "", false
 		}
-		if kind == "string_content" || kind == "escape_sequence" {
+		if kind == "string_content" {
 			content.WriteString(child.Utf8Text(source))
 		}
 	}
@@ -285,10 +307,13 @@ func rubyIsWriteMode(mode string) bool {
 // rubyGlobPrefixDir returns the directory a glob pattern searches: the
 // literal text before the first wildcard character, taken up to its last
 // path separator. A pattern with no separator before its wildcard resolves
-// to ".", the cwd itself.
+// to ".", the cwd itself. The wildcard set includes { for brace alternation
+// (Dir.glob("/abs/{a,b}/*.rb")); omitting it would let a later * win and
+// resolve to a prefix containing an unexpanded {a,b} segment, a path that
+// cannot exist on disk.
 func rubyGlobPrefixDir(pattern string) string {
 	prefix := pattern
-	if wildcard := strings.IndexAny(pattern, "*?["); wildcard >= 0 {
+	if wildcard := strings.IndexAny(pattern, "*?[{"); wildcard >= 0 {
 		prefix = pattern[:wildcard]
 	}
 	dir := "."

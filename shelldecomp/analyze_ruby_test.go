@@ -226,3 +226,74 @@ func TestRubyArgv0RecordedOnReadTarget(t *testing.T) {
 		t.Fatalf("expected a ruby-labeled read of /abs/j.rb, got %+v", region.Parsed.ReadTargets())
 	}
 }
+
+// TestRubyEscapedSingleQuoteDropped covers a single-quoted path containing an
+// escaped quote. tree-sitter-ruby folds the escape straight into one
+// string_content node with no separate node to catch, so the whole string
+// must be dropped by its raw backslash rather than resolved to the
+// un-decoded raw text (which would record a path Ruby never actually opens).
+func TestRubyEscapedSingleQuoteDropped(t *testing.T) {
+	command := `ruby -e "File.read('/abs/it\'s/file.rb')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := rubyRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (an escaped single quote is not decoded, so it drops)", got)
+	}
+}
+
+// TestRubyEscapedBackslashDropped covers a double-quoted path with repeated
+// \\ escape_sequence children. Copying their raw source text would double
+// every backslash in the resolved path, a value Ruby never constructs.
+func TestRubyEscapedBackslashDropped(t *testing.T) {
+	command := `ruby -e 'File.read("C:\\Users\\x\\f.rb")'`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := rubyRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (escape_sequence raw text is not the decoded value, so it drops)", got)
+	}
+}
+
+// TestRubyEscapedInterpolationMarkerDropped covers a double-quoted path with
+// a \#{ escape, which prevents interpolation in real Ruby but still parses
+// as an escape_sequence child. Copying its raw text would leave a spurious
+// backslash the real string does not have.
+func TestRubyEscapedInterpolationMarkerDropped(t *testing.T) {
+	command := `ruby -e 'File.read("/abs/\#{lit}.rb")'`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := rubyRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (\\# escape_sequence raw text is not the decoded value, so it drops)", got)
+	}
+}
+
+// TestRubyDirGlobBraceAlternationPrefixDir covers a brace-alternation glob
+// pattern. The wildcard set must include { so the prefix directory resolves
+// to the real parent directory rather than a path containing an unexpanded
+// {a,b} segment, which cannot exist on disk.
+func TestRubyDirGlobBraceAlternationPrefixDir(t *testing.T) {
+	command := `ruby -e "Dir.glob('/abs/{a,b}/*.rb')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := rubyRegionReads(t, decomposition)
+	want := []string{"/abs"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestRubyFileOpenNonLiteralModeDropped covers a File.open call whose mode
+// argument is present but not a resolvable literal (a variable that could
+// hold "w" at runtime). Since the mode cannot be classified as read or
+// write, the whole call is dropped rather than defaulted to a read the way
+// File.open's own absent-mode default is.
+func TestRubyFileOpenNonLiteralModeDropped(t *testing.T) {
+	command := `ruby -e "path = '/abs/k.rb'; mode = 'r'; File.open(path, mode)"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	reads := rubyRegionReads(t, decomposition)
+	if len(reads) != 0 {
+		t.Fatalf("reads = %v, want none (a non-literal mode is dropped, not defaulted to read)", reads)
+	}
+	writes := rubyRegionWrites(t, decomposition)
+	if len(writes) != 0 {
+		t.Fatalf("writes = %v, want none", writes)
+	}
+}
