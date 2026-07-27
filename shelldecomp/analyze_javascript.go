@@ -22,6 +22,25 @@ const (
 	jsWriteFlagPrefixAppend = "a"
 )
 
+// jsModuleFs and jsModuleFsPromises are the module specifiers a destructured
+// or imported read binding may name. jsModuleFsPromises is both the literal
+// `import ... from "fs/promises"` source string and the synthesized module
+// name requireBindingModule assigns to `require("fs").promises`, so the two
+// spellings of the promise-based fs API bind identically.
+const (
+	jsModuleFs         = "fs"
+	jsModuleFsPromises = "fs/promises"
+)
+
+// jsFsModuleNames is the set of module specifiers buildBindings recognizes.
+// fs/promises is the modern spelling of fs.promises.readFile, one of the
+// brief's three named read forms it says must also resolve "through a
+// destructured or renamed import", so both fs and fs/promises are in scope.
+var jsFsModuleNames = map[string]bool{
+	jsModuleFs:         true,
+	jsModuleFsPromises: true,
+}
+
 // init registers the javascript read analyzer so parseForeign runs it over a
 // javascript embedding's live tree.
 func init() {
@@ -35,9 +54,10 @@ func init() {
 // the receiver and method name. The "fs" entry doubles as the canonical set
 // of destructurable read functions: classifyBoundCall consults it directly so
 // a bare readFileSync(...) call site, reached through
-// `const { readFileSync } = require("fs")` or
-// `import { readFileSync } from "fs"`, is recognized by the same table as
-// fs.readFileSync(...).
+// `const { readFileSync } = require("fs")`, `import { readFileSync } from
+// "fs"`, `const { readFile } = require("fs").promises`, or
+// `import { readFile } from "fs/promises"`, is recognized by the same table
+// as fs.readFileSync(...).
 var jsAlwaysReadMethods = map[string]map[string]bool{
 	"fs":          {"readFileSync": true, "readFile": true, "readdirSync": true, "readdir": true, "createReadStream": true},
 	"fs.promises": {"readFile": true},
@@ -63,8 +83,11 @@ var jsWriteMethods = map[string]map[string]bool{
 //
 // Before the walk, buildBindings resolves the destructured and renamed
 // import forms the brief calls out (`const { readFileSync } = require("fs")`,
-// `import { readFileSync } from "fs"`, and their renamed variants) into a
-// local-name-to-canonical-fs-method map, so a bare call site such as
+// `import { readFileSync } from "fs"`, and their renamed variants), plus the
+// fs/promises spelling of fs.promises.readFile
+// (`const { readFile } = require("fs").promises`,
+// `import { readFile } from "fs/promises"`, and their renamed variants),
+// into a local-name-to-canonical-fs-method map, so a bare call site such as
 // `readFileSync(path)` is recognized the same way `fs.readFileSync(path)` is.
 // This does not verify that the local name "fs" itself came from requiring
 // or importing the fs module before a direct fs.readFileSync(...) call is
@@ -93,11 +116,12 @@ type jsCollector struct {
 	writes   []WriteTarget
 }
 
-// buildBindings scans the whole tree for require("fs") destructuring
-// assignments and `from "fs"` named imports, recording each local name a
-// read method is bound to. It runs as a full pre-pass, before the call-site
-// walk, so a binding is known regardless of whether its declaration happens
-// to appear before or after the call site in source order.
+// buildBindings scans the whole tree for require("fs") and
+// require("fs").promises destructuring assignments and `from "fs"` and
+// `from "fs/promises"` named imports, recording each local name a read
+// method is bound to. It runs as a full pre-pass, before the call-site walk,
+// so a binding is known regardless of whether its declaration happens to
+// appear before or after the call site in source order.
 func (collector *jsCollector) buildBindings(root *tree_sitter.Node) {
 	var declarators []*tree_sitter.Node
 	collectKinds(root, map[string]bool{"variable_declarator": true}, &declarators)
@@ -113,17 +137,19 @@ func (collector *jsCollector) buildBindings(root *tree_sitter.Node) {
 }
 
 // bindRequireDestructure records the bindings of one
-// `const { readFileSync } = require("fs")` or
-// `const { readFileSync: rf } = require("fs")` declarator. A declarator
-// whose name is not an object pattern, or whose value is not a literal
-// require("fs") call, contributes nothing.
+// `const { readFileSync } = require("fs")`,
+// `const { readFileSync: rf } = require("fs")`, or
+// `const { readFile } = require("fs").promises` declarator. A declarator
+// whose name is not an object pattern, or whose value does not resolve to
+// the fs or fs/promises module, contributes nothing.
 func (collector *jsCollector) bindRequireDestructure(declarator *tree_sitter.Node) {
 	nameNode := declarator.ChildByFieldName("name")
 	valueNode := declarator.ChildByFieldName("value")
 	if nameNode == nil || valueNode == nil || nameNode.Kind() != "object_pattern" {
 		return
 	}
-	if !collector.isRequireFsCall(valueNode) {
+	moduleName, ok := collector.requireBindingModule(valueNode)
+	if !ok || !jsFsModuleNames[moduleName] {
 		return
 	}
 	for index := range nameNode.NamedChildCount() {
@@ -163,29 +189,60 @@ func (collector *jsCollector) bindObjectPatternEntry(entry *tree_sitter.Node) {
 	collector.bindings[localName] = canonical
 }
 
-// isRequireFsCall reports whether a node is a call to require("fs") with the
-// module name given as a plain string literal.
-func (collector *jsCollector) isRequireFsCall(node *tree_sitter.Node) bool {
-	if node.Kind() != "call_expression" {
-		return false
+// requireModuleName returns the module name of a require(...) call whose
+// sole argument is a plain string literal, and ("", false) for anything
+// else: a node that is not a call_expression, a call to something other
+// than the bare identifier require, or a call whose argument is not a
+// resolvable literal.
+func (collector *jsCollector) requireModuleName(node *tree_sitter.Node) (string, bool) {
+	if node == nil || node.Kind() != "call_expression" {
+		return "", false
 	}
 	function := node.ChildByFieldName("function")
 	if function == nil || function.Kind() != "identifier" || function.Utf8Text(collector.in.Source) != "require" {
-		return false
+		return "", false
 	}
 	arguments := node.ChildByFieldName("arguments")
-	value, ok := jsStringLiteralValue(jsPositionalArg(arguments, 0), collector.in.Source)
-	return ok && value == "fs"
+	return jsStringLiteralValue(jsPositionalArg(arguments, 0), collector.in.Source)
+}
+
+// requireBindingModule resolves the module name a variable_declarator's
+// value expression destructures from: a plain require("fs") call resolves
+// to "fs", and a require("fs").promises member expression resolves to the
+// synthesized name "fs/promises", so
+// `const { readFile } = require("fs").promises` binds the same way
+// `import { readFile } from "fs/promises"` does. Any other expression
+// (a variable, a call to something other than require, a member access
+// other than .promises) returns ("", false).
+func (collector *jsCollector) requireBindingModule(node *tree_sitter.Node) (string, bool) {
+	if moduleName, ok := collector.requireModuleName(node); ok {
+		return moduleName, true
+	}
+	if node == nil || node.Kind() != "member_expression" {
+		return "", false
+	}
+	object := node.ChildByFieldName("object")
+	property := node.ChildByFieldName("property")
+	if object == nil || property == nil || property.Utf8Text(collector.in.Source) != "promises" {
+		return "", false
+	}
+	moduleName, ok := collector.requireModuleName(object)
+	if !ok {
+		return "", false
+	}
+	return moduleName + "/promises", true
 }
 
 // bindImportDestructure records the bindings of one
-// `import { readFileSync } from "fs"` or
-// `import { readFileSync as rf } from "fs"` statement. A statement whose
-// source is not the literal string "fs" contributes nothing.
+// `import { readFileSync } from "fs"`,
+// `import { readFileSync as rf } from "fs"`, or
+// `import { readFile } from "fs/promises"` statement. A statement whose
+// source is not the literal string "fs" or "fs/promises" contributes
+// nothing.
 func (collector *jsCollector) bindImportDestructure(statement *tree_sitter.Node) {
 	sourceNode := statement.ChildByFieldName("source")
-	value, ok := jsStringLiteralValue(sourceNode, collector.in.Source)
-	if !ok || value != "fs" {
+	moduleName, ok := jsStringLiteralValue(sourceNode, collector.in.Source)
+	if !ok || !jsFsModuleNames[moduleName] {
 		return
 	}
 	var specifiers []*tree_sitter.Node

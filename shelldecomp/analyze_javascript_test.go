@@ -142,6 +142,96 @@ func TestJSRenamedImportCallSite(t *testing.T) {
 	}
 }
 
+// TestJSRequirePromisesReadFileCallSite covers
+// `const { readFile } = require("fs").promises`, the require-side spelling
+// of fs.promises.readFile reached through destructuring.
+func TestJSRequirePromisesReadFileCallSite(t *testing.T) {
+	command := `node -e "const { readFile } = require('fs').promises; readFile('/abs/q.js')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	want := []string{"/abs/q.js"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestJSRenamedRequirePromisesReadFileCallSite covers the renamed variant of
+// the require("fs").promises destructure,
+// `const { readFile: rf } = require("fs").promises`.
+func TestJSRenamedRequirePromisesReadFileCallSite(t *testing.T) {
+	command := `node -e "const { readFile: rf } = require('fs').promises; rf('/abs/r.js')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	want := []string{"/abs/r.js"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestJSImportedFsPromisesReadFileCallSite covers the modern ESM spelling of
+// fs.promises.readFile, `import { readFile } from "fs/promises"`.
+func TestJSImportedFsPromisesReadFileCallSite(t *testing.T) {
+	command := `node -e "import { readFile } from 'fs/promises'; readFile('/abs/s.js')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	want := []string{"/abs/s.js"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestJSRenamedImportFsPromisesCallSite covers the renamed variant of the
+// fs/promises import, `import { readFile as rf } from "fs/promises"`.
+func TestJSRenamedImportFsPromisesCallSite(t *testing.T) {
+	command := `node -e "import { readFile as rf } from 'fs/promises'; rf('/abs/t.js')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	want := []string{"/abs/t.js"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
+// TestJSDestructuredFromUnrelatedModuleNotRead is a negative case proving
+// the binding mechanism does not over-reach: a name destructured from a
+// module other than fs or fs/promises is not treated as a read, even though
+// its local name matches a known fs method name.
+func TestJSDestructuredFromUnrelatedModuleNotRead(t *testing.T) {
+	command := `node -e "const { readFileSync } = require('other-module'); readFileSync('/abs/u.js')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (a binding from an unrelated module is not an fs read)", got)
+	}
+}
+
+// TestJSDestructuredNonReadMethodNotRead is a negative case proving the
+// binding mechanism does not over-reach: a name destructured from fs that is
+// not in the read-method table is not treated as a read.
+func TestJSDestructuredNonReadMethodNotRead(t *testing.T) {
+	command := `node -e "const { existsSync } = require('fs'); existsSync('/abs/v.js')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (existsSync is bound but is not a read method)", got)
+	}
+}
+
+// TestJSDestructuredReaddirSyncCallSite is a positive case for the part of
+// the always-read table beyond the brief's two named destructure examples
+// (readFileSync, readFile): a destructured readdirSync call site must also
+// resolve, since classifyBoundCall consults the same jsAlwaysReadMethods
+// table the direct fs.readdirSync(...) form uses.
+func TestJSDestructuredReaddirSyncCallSite(t *testing.T) {
+	command := `node -e "const { readdirSync } = require('fs'); readdirSync('/abs/dir3')"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := jsRegionReads(t, decomposition)
+	want := []string{"/abs/dir3"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
 func TestJSReaddirSyncLiteral(t *testing.T) {
 	decomposition := ParseWithOptions(`node -e "fs.readdirSync('/abs/dir')"`, "/repo", Options{Home: "/home/u"})
 	got := jsRegionReads(t, decomposition)
