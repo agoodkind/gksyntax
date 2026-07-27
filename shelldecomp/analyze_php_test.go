@@ -264,6 +264,62 @@ func TestPHPHeredocPathDropped(t *testing.T) {
 	}
 }
 
+// TestPHPFopenNamedArgumentsReorderedDropped covers the fabrication case a
+// review flagged: fopen's named arguments given out of declaration order.
+// phpPositionalArg resolves by source-order index, so without the
+// phpCallHasNamedArgument guard, position 0 ("mode") would be recorded as a
+// read of the literal "r" and the real target /etc/passwd would be dropped.
+// That resolved-but-wrong path is worse than a drop: it would displace the
+// real target so the consumer's guard checks a path the program never
+// touches. This asserts neither the fabricated "r" read nor any write
+// appears, only that the call produces no target at all.
+func TestPHPFopenNamedArgumentsReorderedDropped(t *testing.T) {
+	command := `php -r "fopen(mode: 'r', filename: '/etc/passwd');"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	reads := phpRegionReads(t, decomposition)
+	if len(reads) != 0 {
+		t.Fatalf("reads = %v, want none (named arguments are dropped, not resolved positionally)", reads)
+	}
+	writes := phpRegionWrites(t, decomposition)
+	if len(writes) != 0 {
+		t.Fatalf("writes = %v, want none", writes)
+	}
+}
+
+// TestPHPFilePutContentsNamedArgumentsReorderedDropped covers the same
+// fabrication shape for file_put_contents: without the guard, position 0
+// ("data") would be recorded as a write of the literal "x" resolved against
+// cwd, and the real target /etc/cron.d/evil would be dropped.
+func TestPHPFilePutContentsNamedArgumentsReorderedDropped(t *testing.T) {
+	command := `php -r "file_put_contents(data: 'x', filename: '/etc/cron.d/evil');"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	writes := phpRegionWrites(t, decomposition)
+	if len(writes) != 0 {
+		t.Fatalf("writes = %v, want none (named arguments are dropped, not resolved positionally)", writes)
+	}
+	reads := phpRegionReads(t, decomposition)
+	if len(reads) != 0 {
+		t.Fatalf("reads = %v, want none", reads)
+	}
+}
+
+// TestPHPGlobNamedArgumentDropped covers a single-argument function called
+// with a named argument. glob only has one role to fill (pattern), so a
+// named call in declaration order would resolve correctly by position, but
+// phpCallHasNamedArgument drops it anyway: the guard applies uniformly to
+// every call this analyzer classifies, not only the two-argument functions,
+// since a caller can add a second named argument (glob's own optional
+// flags parameter) in either order and this analyzer has no per-function
+// exception to the rule.
+func TestPHPGlobNamedArgumentDropped(t *testing.T) {
+	command := `php -r "glob(pattern: '/abs/indexed/*.php');"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := phpRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (a named argument drops the call)", got)
+	}
+}
+
 func TestPHPArgv0RecordedOnReadTarget(t *testing.T) {
 	decomposition := ParseWithOptions(`php -r "file_get_contents('/abs/j.php');"`, "/repo", Options{Home: "/home/u"})
 	region := phpRegion(t, decomposition)

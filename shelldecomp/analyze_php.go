@@ -115,7 +115,9 @@ func (collector *phpCollector) walk(node *tree_sitter.Node) {
 // call whose function is a bare name node (file_get_contents, fopen, ...) is
 // classified; a call through a variable, a namespaced or qualified name, or
 // any other callable expression is not one of the brief's exact forms, so it
-// is left alone rather than matched by a prefix or substring.
+// is left alone rather than matched by a prefix or substring. A call using
+// any PHP 8 named argument is dropped before any positional resolution runs;
+// see phpCallHasNamedArgument for why.
 func (collector *phpCollector) classifyCall(node *tree_sitter.Node) {
 	functionNode := node.ChildByFieldName("function")
 	if functionNode == nil || functionNode.Kind() != phpKindName {
@@ -123,6 +125,9 @@ func (collector *phpCollector) classifyCall(node *tree_sitter.Node) {
 	}
 	name := functionNode.Utf8Text(collector.in.Source)
 	arguments := node.ChildByFieldName("arguments")
+	if phpCallHasNamedArgument(arguments) {
+		return
+	}
 
 	switch {
 	case name == phpFuncFopen:
@@ -235,6 +240,38 @@ func (collector *phpCollector) writeTarget(resolved string, node *tree_sitter.No
 		Cwd:        collector.in.Cwd,
 		Raw:        node.Utf8Text(collector.in.Source),
 	}
+}
+
+// phpCallHasNamedArgument reports whether an arguments node contains any PHP
+// 8 named argument (name: value). phpPositionalArg resolves an argument by
+// its source-order index, not by the callee's declared parameter name, so a
+// named argument used out of declaration order pairs the wrong literal with
+// the wrong role: fopen(mode: 'r', filename: '/etc/passwd') would otherwise
+// record a read of the literal "r" and drop the real target /etc/passwd,
+// the fabricated-path failure the drop-never-fabricate rule exists to
+// prevent. Detecting a named argument is a single field lookup: the
+// php_only grammar folds a name: prefix onto the argument node's own "name"
+// field (distinct from the unrelated "reference_modifier" field a by-ref
+// positional argument such as f(&$x) carries), verified against a live
+// parse. Resolving a named argument correctly, rather than just detecting
+// it, would need a hardcoded parameter-name table per function that must
+// stay exactly right forever; dropping the whole call is simpler and keeps
+// the same drop-never-fabricate guarantee, so any named argument drops the
+// call entirely rather than being matched by name.
+func phpCallHasNamedArgument(arguments *tree_sitter.Node) bool {
+	if arguments == nil || arguments.Kind() != phpKindArguments {
+		return false
+	}
+	for index := range arguments.NamedChildCount() {
+		child := arguments.NamedChild(index)
+		if child == nil || child.Kind() != phpKindArgument {
+			continue
+		}
+		if child.ChildByFieldName("name") != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // phpPositionalArg returns the nth argument node (by source position) of a
