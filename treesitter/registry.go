@@ -54,6 +54,7 @@ const (
 	grammarCSharp     grammarKey = "csharp"
 	grammarCS         grammarKey = "cs"
 	grammarPHP        grammarKey = "php"
+	grammarPHPOnly    grammarKey = "php_only"
 	grammarRuby       grammarKey = "ruby"
 	grammarBash       grammarKey = "bash"
 	grammarJSON       grammarKey = "json"
@@ -112,6 +113,11 @@ var extensionLanguages = map[string]string{
 // GrammarForLanguage returns the tree-sitter language for a language id and
 // whether a grammar is registered for it. A false second return is a normal
 // result: the caller treats the input as unparseable rather than an error.
+// "php" and "php_only" are two dialects of the same tree-sitter-php module:
+// "php" is the tag-aware document grammar for a whole .php file, whose program
+// rule treats any input before a leading <?php tag as opaque text, and
+// "php_only" is the untagged dialect that parses a bare sequence of statements
+// with no tag at all, the shape of a `php -r` script body.
 func GrammarForLanguage(language string) (*tree_sitter.Language, bool) {
 	switch grammarKey(strings.ToLower(language)) {
 	case grammarJavaScript, grammarJS:
@@ -136,6 +142,8 @@ func GrammarForLanguage(language string) (*tree_sitter.Language, bool) {
 		return tree_sitter.NewLanguage(tree_sitter_csharp.Language()), true
 	case grammarPHP:
 		return tree_sitter.NewLanguage(tree_sitter_php.LanguagePHP()), true
+	case grammarPHPOnly:
+		return tree_sitter.NewLanguage(tree_sitter_php.LanguagePHPOnly()), true
 	case grammarRuby:
 		return tree_sitter.NewLanguage(tree_sitter_ruby.Language()), true
 	case grammarBash:

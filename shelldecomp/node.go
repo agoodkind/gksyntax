@@ -23,6 +23,7 @@ const (
 	LangSed
 	LangRegex
 	LangOpaque
+	LangPHP
 )
 
 // String returns the lower-case name of the language, or "unknown" for an
@@ -55,6 +56,8 @@ func (lang Lang) String() string {
 		return "regex"
 	case LangOpaque:
 		return "opaque"
+	case LangPHP:
+		return "php"
 	default:
 		return "unknown"
 	}
@@ -62,7 +65,13 @@ func (lang Lang) String() string {
 
 // grammarName returns the treesitter grammar id for a language, or "" when no
 // grammar is registered for it. Languages that return "" are carried as
-// LangOpaque embedded regions with a nil parse.
+// LangOpaque embedded regions with a nil parse. LangPHP resolves to "php_only"
+// rather than the registry's "php" id: that id backs the tag-aware document
+// grammar tree-sitter-php ships for whole .php files, whose program rule folds
+// any input with no leading <?php tag into a single opaque text node. A
+// `php -r` body is bare statements with no tag, so treesitter.GrammarForLanguage
+// registers a second grammar id, "php_only", for tree-sitter-php's untagged
+// dialect, which parses the same body as real statement and expression nodes.
 func (lang Lang) grammarName() string {
 	switch lang {
 	case LangShell:
@@ -77,6 +86,8 @@ func (lang Lang) grammarName() string {
 		return "awk"
 	case LangPerl:
 		return "perl"
+	case LangPHP:
+		return "php_only"
 	case LangUnknown, LangAppleScript, LangSQL, LangJQ,
 		LangSed, LangRegex, LangOpaque:
 		return ""
