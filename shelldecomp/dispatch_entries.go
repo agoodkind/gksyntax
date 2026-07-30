@@ -38,6 +38,7 @@ func registerLanguageEmbedders() {
 	Register("perl", dispatchPerlDashE)
 	Register("node", dispatchNodeDashE)
 	Register("ruby", dispatchRubyDashE)
+	Register("php", dispatchPHPDashR)
 	Register("osascript", dispatchOsascriptDashE)
 	Register("sqlite3", dispatchSqlite3)
 }
@@ -99,6 +100,12 @@ func dispatchNodeDashE(cmd Command, source []byte) []Embedding {
 func dispatchRubyDashE(cmd Command, source []byte) []Embedding {
 	_ = source
 	return flagValueEmbedding(cmd, "-e", LangRuby)
+}
+
+// dispatchPHPDashR extracts a php -r script as a PHP embedding.
+func dispatchPHPDashR(cmd Command, source []byte) []Embedding {
+	_ = source
+	return flagValueEmbedding(cmd, "-r", LangPHP)
 }
 
 // dispatchOsascriptDashE extracts an osascript -e script as an AppleScript
