@@ -113,14 +113,14 @@ func TestOsascriptEmbeddingIsOpaque(t *testing.T) {
 	}
 }
 
-func TestSqlite3EmbeddingIsOpaque(t *testing.T) {
+func TestSqlite3EmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`sqlite3 db.sqlite "select 1"`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangSQL {
 		t.Fatalf("sqlite3 region lang = %v, want LangSQL", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("sqlite3 embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("sqlite3 embedding should be parsed (LangSQL has a registered text-scan analyzer, even with no grammar)")
 	}
 }
 
