@@ -165,25 +165,41 @@ func isNonLiteralKind(kind nodeKind) bool {
 }
 
 // literalStringValue resolves a double-quoted string node. It is literal only
-// when its sole inner content is string_content with no expansion siblings.
+// when every child is the surrounding quote token or string_content, with no
+// expansion or substitution sibling.
+//
+// The literal value is read directly from the source bytes between the
+// opening and closing quote, rather than reassembled by concatenating each
+// string_content child's own text. tree-sitter-bash does not carry a
+// multi-line double-quoted string's embedded newline inside any child node:
+// when the string content spans a real newline, the grammar splits it into
+// two string_content siblings and the newline byte falls in the gap between
+// them, carried by neither. Concatenating the children's text alone silently
+// drops that byte, fusing the two lines together. Reading the raw span
+// between the quotes preserves the newline (and anything else the grammar
+// omits from a named child) exactly as it appears in the source.
 func literalStringValue(node *tree_sitter.Node, source []byte) (string, bool) {
-	var content strings.Builder
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
 		kind := nodeKind(child.Kind())
-		if kind == kindDoubleQuote {
-			continue
-		}
-		if kind == kindStringContent {
-			content.WriteString(child.Utf8Text(source))
+		if kind == kindDoubleQuote || kind == kindStringContent {
 			continue
 		}
 		return "", false
 	}
-	return content.String(), true
+	// The opening and closing quote are each exactly one byte (the ASCII '"'
+	// the grammar requires to delimit a string node), so the literal content
+	// is the span strictly between them.
+	const quoteWidth = 1
+	start := node.StartByte() + quoteWidth
+	end := node.EndByte() - quoteWidth
+	if end < start || end > uint(len(source)) {
+		return "", false
+	}
+	return string(source[start:end]), true
 }
 
 // stripQuotes removes a single pair of surrounding single or double quotes from

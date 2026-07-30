@@ -124,6 +124,25 @@ func TestSqlite3EmbeddingIsOpaque(t *testing.T) {
 	}
 }
 
+// TestSqlite3MultilineEmbeddingPreservesNewline covers the reported bug: a
+// multi-line double-quoted sqlite3 script reached through Parse, the path a
+// real caller uses (dispatchSqlite3 reads the argument's already-resolved
+// Word.Value, produced by literalStringValue). Before the fix, the newline
+// between the two SQL statements was dropped, fusing "mytable" and "ATTACH"
+// into "mytableATTACH". The fix must preserve the newline exactly.
+func TestSqlite3MultilineEmbeddingPreservesNewline(t *testing.T) {
+	command := "sqlite3 db.sqlite \".import /data/in.csv mytable\nATTACH DATABASE '/other/aux.db' AS aux;\""
+	decomposition := Parse(command, "/w", "/home/u")
+	region := onlyRegion(t, decomposition)
+	if region.Lang != LangSQL {
+		t.Fatalf("sqlite3 region lang = %v, want LangSQL", region.Lang)
+	}
+	want := ".import /data/in.csv mytable\nATTACH DATABASE '/other/aux.db' AS aux;"
+	if region.Text != want {
+		t.Fatalf("sqlite3 region text = %q, want %q", region.Text, want)
+	}
+}
+
 func TestAwkEmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`awk '{print}' f`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)

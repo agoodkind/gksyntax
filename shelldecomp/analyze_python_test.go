@@ -99,6 +99,22 @@ func TestPythonInlineArgvRead(t *testing.T) {
 	}
 }
 
+// TestPythonMultilineDashCStatementsRead covers a multi-line double-quoted
+// -c script reached through Parse, the path a real caller uses. Before the
+// literalStringValue fix, tree-sitter-bash's dropped newline fused the two
+// statements into "import osopen(...)", which python cannot parse as two
+// statements and would not surface the open() read at all. With the newline
+// preserved, the script parses as two statements and the read resolves.
+func TestPythonMultilineDashCStatementsRead(t *testing.T) {
+	command := "python -c \"import os\nopen('/abs/x.go').read()\""
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := pythonRegionReads(t, decomposition)
+	want := []string{"/abs/x.go"}
+	if !equalStrings(got, want) {
+		t.Fatalf("reads = %v, want %v", got, want)
+	}
+}
+
 func TestPythonInlineAbsoluteRead(t *testing.T) {
 	decomposition := ParseWithOptions(`python -c "open('/abs/y.go')"`, "/repo", Options{Home: "/home/u"})
 	got := pythonRegionReads(t, decomposition)
