@@ -116,7 +116,9 @@ func dispatchOsascriptDashE(cmd Command, source []byte) []Embedding {
 }
 
 // dispatchSqlite3 extracts the SQL operand of sqlite3 (the argument after the
-// database path) as an SQL embedding, which has no grammar and stays opaque.
+// database path) as an SQL embedding. LangSQL has no tree-sitter grammar, but
+// analyze_sql.go registers a text-scan analyzer for it, so the resulting
+// region is parsed (Parsed != nil), not opaque.
 func dispatchSqlite3(cmd Command, source []byte) []Embedding {
 	_ = source
 	positionals := make([]Word, 0, len(cmd.Args))

@@ -18,14 +18,25 @@ const (
 	sqlDotOutput = ".output"
 )
 
-// sqlOutputStdout and sqlOutputOff are the two special ".output" arguments
-// the sqlite3 shell treats as "send to the console" rather than as a file
-// name to open. Recording a write target for either would resolve a path the
-// shell never touches, so both are matched by exact string and dropped.
-const (
-	sqlOutputStdout = "stdout"
-	sqlOutputOff    = "off"
-)
+// sqlOutputStdout is the sqlite3 shell's magic ".output stdout" argument.
+// output_file_open in src/shell.c.in matches it literally and reuses the
+// existing stdout handle rather than opening any file, so recording a write
+// target for it would resolve a path the shell never touches; it is matched
+// by exact string and dropped.
+const sqlOutputStdout = "stdout"
+
+// sqlOutputOff is the sqlite3 shell's magic ".output off" argument.
+// dotCmdOutput in src/shell.c.in (line ~9400) remaps it to a real open of
+// sqlDevNullPath (nul on Windows), not to "no file", so unlike
+// sqlOutputStdout this is a genuine write and is recorded as one against
+// sqlDevNullPath rather than dropped.
+const sqlOutputOff = "off"
+
+// sqlDevNullPath is the file ".output off" actually opens on the POSIX
+// targets this package resolves paths for elsewhere (shelldecomp models
+// absolute paths as POSIX throughout; it has no Windows path handling to
+// remap this to nul).
+const sqlDevNullPath = "/dev/null"
 
 // sqlAttachKeyword, sqlDatabaseKeyword, and sqlAsKeyword are the SQL keywords
 // the ATTACH scan matches, compared case-insensitively since SQL keywords are
@@ -144,9 +155,23 @@ func splitDotCommandArgs(line string) []sqlDotToken {
 // scanDotCommand tokenizes one already-trimmed dot-command line and records
 // its file access when the command is .import or .output. Any other dot
 // command, and a recognized command with no path argument, records nothing.
+// Both .import and .output accept option flags before the file argument
+// (.import takes --csv, --ascii, --skip N, --schema SCHEMA, --colsep, and
+// --rowsep; .output and .once take -bom, -plain, -keep, -e, -x, -w, and
+// --error-prefix, per sqlite.org/cli.html and dotCmdOutput in
+// src/shell.c.in), so the token right after the command name is not always
+// the file. This text scan does not model every flag's own arity (some take
+// a following value, some do not), so rather than guess how many tokens a
+// flag consumes, a leading '-' on that token drops the whole call: taking it
+// as the path would resolve a fabricated path like /repo/--csv and silently
+// miss the real file, which is the disqualifying failure this package never
+// allows.
 func (collector *sqlCollector) scanDotCommand(line string) {
 	tokens := splitDotCommandArgs(line)
 	if len(tokens) < 2 {
+		return
+	}
+	if strings.HasPrefix(tokens[1].Value, "-") {
 		return
 	}
 	switch tokens[0].Value {
@@ -166,14 +191,20 @@ func (collector *sqlCollector) addDotRead(token sqlDotToken) {
 	collector.addRead(token.Value, token.Raw)
 }
 
-// addDotOutputWrite records a .output FILE argument as a write, unless its
-// raw span carries a backslash or the argument is one of the sqlite3 shell's
-// two magic values that mean "the console", not a file: stdout and off.
+// addDotOutputWrite records a .output FILE argument as a write. stdout is
+// the sqlite3 shell's one console-redirect value and is dropped; off is a
+// real open of sqlDevNullPath and is recorded as a write to that path, not
+// dropped. A raw backslash in the argument's span still drops the whole
+// token.
 func (collector *sqlCollector) addDotOutputWrite(token sqlDotToken) {
 	if token.HasBackslash {
 		return
 	}
-	if token.Value == sqlOutputStdout || token.Value == sqlOutputOff {
+	if token.Value == sqlOutputStdout {
+		return
+	}
+	if token.Value == sqlOutputOff {
+		collector.addWrite(sqlDevNullPath, token.Raw)
 		return
 	}
 	collector.addWrite(token.Value, token.Raw)

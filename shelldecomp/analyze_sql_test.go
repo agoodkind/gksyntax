@@ -151,6 +151,47 @@ func TestSQLOutputStdoutIsNotWrite(t *testing.T) {
 	}
 }
 
+// TestSQLOutputOffIsWriteToDevNull covers the sqlite3 shell's magic
+// ".output off" argument. Unlike "stdout", "off" is a real open of
+// /dev/null (dotCmdOutput in src/shell.c.in), so it is recorded as a write
+// to that path rather than dropped.
+func TestSQLOutputOffIsWriteToDevNull(t *testing.T) {
+	command := `sqlite3 db.sqlite ".output off"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	writes := sqlRegionWrites(t, decomposition)
+	want := []string{"/dev/null"}
+	if !equalStrings(writes, want) {
+		t.Fatalf("writes = %v, want %v", writes, want)
+	}
+}
+
+// TestSQLImportFlagPrefixedDropped covers a .import invocation carrying an
+// option flag before the file, such as --csv. sqlite3's own .import loops
+// past a leading '-' token before accepting the file argument; this analyzer
+// does not model every flag's arity, so it drops the whole call rather than
+// misresolving the flag token itself as the path (which would fabricate a
+// path like /repo/--csv and silently miss the real file /data/in.csv).
+func TestSQLImportFlagPrefixedDropped(t *testing.T) {
+	command := `sqlite3 db.sqlite ".import --csv /data/in.csv mytable"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := sqlRegionReads(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("reads = %v, want none (a flag-prefixed .import is dropped, not misresolved)", got)
+	}
+}
+
+// TestSQLOutputFlagPrefixedDropped covers a .output invocation carrying an
+// option flag before the file, such as -bom, matching the same drop rule as
+// TestSQLImportFlagPrefixedDropped.
+func TestSQLOutputFlagPrefixedDropped(t *testing.T) {
+	command := `sqlite3 db.sqlite ".output -bom /data/log.txt"`
+	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+	got := sqlRegionWrites(t, decomposition)
+	if len(got) != 0 {
+		t.Fatalf("writes = %v, want none (a flag-prefixed .output is dropped, not misresolved)", got)
+	}
+}
+
 func TestSQLBindParameterDropped(t *testing.T) {
 	command := `sqlite3 db.sqlite "SELECT readfile(?1);"`
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
