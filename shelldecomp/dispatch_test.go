@@ -102,14 +102,14 @@ func TestRubyEmbeddingIsParsedRuby(t *testing.T) {
 	}
 }
 
-func TestOsascriptEmbeddingIsOpaque(t *testing.T) {
+func TestOsascriptEmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`osascript -e 'display dialog "hi"'`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangAppleScript {
 		t.Fatalf("osascript region lang = %v, want LangAppleScript", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("osascript embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("osascript embedding should be parsed (LangAppleScript has a registered text-scan analyzer, even with no grammar)")
 	}
 }
 
