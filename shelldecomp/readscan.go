@@ -12,6 +12,13 @@ type readScan struct {
 	valueFlags   map[string]bool
 	patternTaken bool
 	hasExprFlag  bool
+	// twoValueFlags take a name and a value as two separate operands, so
+	// skipping only one leaves the value bare and shifts every operand after
+	// it by one position.
+	twoValueFlags map[string]bool
+	// fileValuedFlags are the subset whose second value is a file the command
+	// reads, so it is a real read target rather than something to skip.
+	fileValuedFlags map[string]bool
 }
 
 // newReadScan builds a scan for one command. A grep or rg given -e or -f has
@@ -30,13 +37,39 @@ func newReadScan(argv0 string, args []rawArg) *readScan {
 			hasExprFlag = true
 		}
 	}
-	return &readScan{
-		argv0:        argv0,
-		args:         args,
-		valueFlags:   valueFlags,
-		patternTaken: hasExprFlag,
-		hasExprFlag:  hasExprFlag,
+	twoValueFlags := twoValueFlagsByArgv0[argv0]
+	if twoValueFlags == nil {
+		twoValueFlags = map[string]bool{}
 	}
+	fileValuedFlags := fileValuedFlagsByArgv0[argv0]
+	if fileValuedFlags == nil {
+		fileValuedFlags = map[string]bool{}
+	}
+	return &readScan{
+		argv0:           argv0,
+		args:            args,
+		valueFlags:      valueFlags,
+		patternTaken:    hasExprFlag,
+		hasExprFlag:     hasExprFlag,
+		twoValueFlags:   twoValueFlags,
+		fileValuedFlags: fileValuedFlags,
+	}
+}
+
+// twoValueFlagsByArgv0 lists flags that take two separate operands. jq's --arg
+// binds a name to a value, and --slurpfile and --rawfile bind a name to a file.
+var twoValueFlagsByArgv0 = map[string]map[string]bool{
+	"jq": {
+		"--arg": true, "--argjson": true,
+		"--slurpfile": true, "--rawfile": true,
+	},
+}
+
+// fileValuedFlagsByArgv0 lists the two-value flags whose second operand is a
+// file the command reads, so it belongs in the read targets rather than being
+// skipped with the name that precedes it.
+var fileValuedFlagsByArgv0 = map[string]map[string]bool{
+	"jq": {"--slurpfile": true, "--rawfile": true},
 }
 
 // patternTakingSearchers are the commands whose first bare operand is a search
@@ -82,11 +115,14 @@ func (scan *readScan) run() ([]rawArg, bool) {
 	for index < len(scan.args) {
 		arg := scan.args[index]
 		if strings.HasPrefix(arg.text, "-") {
-			recursive, advance := scan.handleFlag(index)
-			if recursive {
+			outcome := scan.handleFlag(index)
+			if outcome.recursive {
 				sawRecursive = true
 			}
-			index += advance
+			if outcome.dataPath != nil {
+				paths = append(paths, *outcome.dataPath)
+			}
+			index += outcome.advance
 			continue
 		}
 		if scan.usesPattern() && !scan.patternTaken {
@@ -100,19 +136,51 @@ func (scan *readScan) run() ([]rawArg, bool) {
 	return paths, sawRecursive
 }
 
-// handleFlag classifies a flag token at index and returns whether it is a
-// recursive flag and how many operands it consumes (one for a lone flag, two
-// for a value-flag whose value is a separate operand).
-func (scan *readScan) handleFlag(index int) (bool, int) {
+// flagOutcome is what one flag token contributed: whether it requested a
+// recursive search, how many operands it consumed, and the data file it named
+// when its final value is one.
+type flagOutcome struct {
+	recursive bool
+	advance   int
+	dataPath  *rawArg
+}
+
+// handleFlag classifies a flag token at index. A lone flag consumes one
+// operand, a value-flag consumes its separate value too, and a two-value flag
+// consumes both.
+//
+// Getting the count wrong shifts every later operand by one: jq's `--arg x 1`
+// left `1` bare, which the program-taking rule then consumed as jq's program,
+// so the real program `.x` resolved as a path that exists nowhere. A fabricated
+// path both hides the real read and hands a phantom target to anything keyed on
+// read targets.
+func (scan *readScan) handleFlag(index int) flagOutcome {
 	arg := scan.args[index]
 	recursive := isRecursiveFlag(arg.text)
+
+	if scan.twoValueFlags[arg.text] {
+		if index+2 < len(scan.args) {
+			outcome := flagOutcome{recursive: recursive, advance: 3, dataPath: nil}
+			// The second value of a file-valued flag is data the command reads,
+			// unlike the name that precedes it.
+			if scan.fileValuedFlags[arg.text] {
+				value := scan.args[index+2]
+				outcome.dataPath = &value
+			}
+			return outcome
+		}
+		// A truncated invocation names no complete pair, so nothing after it can
+		// be classified; consume what is left rather than guessing.
+		return flagOutcome{recursive: recursive, advance: len(scan.args) - index, dataPath: nil}
+	}
+
 	if scan.valueFlags[arg.text] {
 		if index+1 < len(scan.args) {
-			return recursive, 2
+			return flagOutcome{recursive: recursive, advance: 2, dataPath: nil}
 		}
-		return recursive, 1
+		return flagOutcome{recursive: recursive, advance: 1, dataPath: nil}
 	}
-	return recursive, 1
+	return flagOutcome{recursive: recursive, advance: 1, dataPath: nil}
 }
 
 // isRecursiveFlag reports whether a flag token requests a recursive search,
