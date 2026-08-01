@@ -286,13 +286,22 @@ func rubyStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 		if child == nil {
 			continue
 		}
-		kind := child.Kind()
-		if kind == "interpolation" {
-			return "", false
+		// The quote tokens are anonymous, unlike python's named string_start and
+		// string_end, so they are skipped by namedness rather than by kind.
+		if !child.IsNamed() {
+			continue
 		}
-		if kind == "string_content" {
+		if child.Kind() == "string_content" {
 			content.WriteString(child.Utf8Text(source))
+			continue
 		}
+		// Any other named child, interpolation today and whatever a later
+		// grammar adds, means the value is not the literal source text.
+		// Refusing rather than skipping keeps a grammar change costing a
+		// dropped target instead of a truncated one, which would be a
+		// fabricated path recorded as resolvable. This matches
+		// stringLiteralValue in analyze_python.go.
+		return "", false
 	}
 	return content.String(), true
 }

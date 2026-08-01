@@ -97,7 +97,7 @@ func analyzeJavaScript(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &jsCollector{
 		in:       in,
 		scope:    scope{cwd: in.Cwd, homeDir: in.Home},
-		bindings: map[string]string{},
+		bindings: map[string]jsBinding{},
 	}
 	collector.buildBindings(in.Root)
 	collector.walk(in.Root)
@@ -111,9 +111,26 @@ func analyzeJavaScript(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 type jsCollector struct {
 	in       AnalyzerInput
 	scope    scope
-	bindings map[string]string
+	bindings map[string]jsBinding
 	reads    []ReadTarget
 	writes   []WriteTarget
+}
+
+// jsBinding is one local name bound to an fs read function, together with the
+// module it came from. The module is what makes the binding checkable: a name
+// destructured from fs/promises exists only if fs.promises defines it, and
+// checking against the whole fs table records a read at a call site that throws.
+type jsBinding struct {
+	canonical string
+	module    string
+}
+
+// jsModuleReadMethods maps a module specifier to the read methods that module
+// actually exposes, so a destructured or imported name is checked against its
+// own module rather than the union of both.
+var jsModuleReadMethods = map[string]map[string]bool{
+	jsModuleFs:         jsAlwaysReadMethods["fs"],
+	jsModuleFsPromises: jsAlwaysReadMethods["fs.promises"],
 }
 
 // buildBindings scans the whole tree for require("fs") and
@@ -153,7 +170,7 @@ func (collector *jsCollector) bindRequireDestructure(declarator *tree_sitter.Nod
 		return
 	}
 	for index := range nameNode.NamedChildCount() {
-		collector.bindObjectPatternEntry(nameNode.NamedChild(index))
+		collector.bindObjectPatternEntry(nameNode.NamedChild(index), moduleName)
 	}
 }
 
@@ -164,13 +181,13 @@ func (collector *jsCollector) bindRequireDestructure(declarator *tree_sitter.Nod
 // value or a nested pattern is not a plain rename and is dropped rather than
 // guessed. Any other entry kind (a rest pattern, a default-value pattern) is
 // left alone.
-func (collector *jsCollector) bindObjectPatternEntry(entry *tree_sitter.Node) {
+func (collector *jsCollector) bindObjectPatternEntry(entry *tree_sitter.Node, moduleName string) {
 	if entry == nil {
 		return
 	}
 	if entry.Kind() == "shorthand_property_identifier_pattern" {
 		name := entry.Utf8Text(collector.in.Source)
-		collector.bindings[name] = name
+		collector.bindings[name] = jsBinding{canonical: name, module: moduleName}
 		return
 	}
 	if entry.Kind() != "pair_pattern" {
@@ -186,7 +203,7 @@ func (collector *jsCollector) bindObjectPatternEntry(entry *tree_sitter.Node) {
 	}
 	canonical := keyNode.Utf8Text(collector.in.Source)
 	localName := valueNode.Utf8Text(collector.in.Source)
-	collector.bindings[localName] = canonical
+	collector.bindings[localName] = jsBinding{canonical: canonical, module: moduleName}
 }
 
 // requireModuleName returns the module name of a require(...) call whose
@@ -248,7 +265,7 @@ func (collector *jsCollector) bindImportDestructure(statement *tree_sitter.Node)
 	var specifiers []*tree_sitter.Node
 	collectKinds(statement, map[string]bool{"import_specifier": true}, &specifiers)
 	for _, specifier := range specifiers {
-		collector.bindImportSpecifier(specifier)
+		collector.bindImportSpecifier(specifier, moduleName)
 	}
 }
 
@@ -257,7 +274,7 @@ func (collector *jsCollector) bindImportDestructure(statement *tree_sitter.Node)
 // specifier renames with `as` and the canonical name otherwise. A specifier
 // whose name is not a plain identifier (the `default` keyword form, or a
 // string re-export name) contributes nothing.
-func (collector *jsCollector) bindImportSpecifier(specifier *tree_sitter.Node) {
+func (collector *jsCollector) bindImportSpecifier(specifier *tree_sitter.Node, moduleName string) {
 	nameNode := specifier.ChildByFieldName("name")
 	if nameNode == nil || nameNode.Kind() != "identifier" {
 		return
@@ -267,7 +284,7 @@ func (collector *jsCollector) bindImportSpecifier(specifier *tree_sitter.Node) {
 	if aliasNode := specifier.ChildByFieldName("alias"); aliasNode != nil {
 		localName = aliasNode.Utf8Text(collector.in.Source)
 	}
-	collector.bindings[localName] = canonical
+	collector.bindings[localName] = jsBinding{canonical: canonical, module: moduleName}
 }
 
 // walk descends a node and its children in pre-order, classifying every
@@ -310,11 +327,14 @@ func (collector *jsCollector) classifyCall(node *tree_sitter.Node) {
 // not a known fs read binding is left alone, since a bare call to an
 // unrelated function is not one of the forms the brief lists.
 func (collector *jsCollector) classifyBoundCall(name string, arguments *tree_sitter.Node) {
-	canonical, ok := collector.bindings[name]
+	binding, ok := collector.bindings[name]
 	if !ok {
 		return
 	}
-	if jsAlwaysReadMethods["fs"][canonical] {
+	// Checked against the binding's own module, not the union of both. A sync
+	// method destructured from fs/promises does not exist there, so a call to it
+	// throws before opening anything and must not be recorded as a read.
+	if jsModuleReadMethods[binding.module][binding.canonical] {
 		collector.addRead(jsPositionalArg(arguments, 0))
 	}
 }
