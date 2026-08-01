@@ -21,20 +21,66 @@ type readScan struct {
 	fileValuedFlags map[string]bool
 }
 
-// newReadScan builds a scan for one command. A grep or rg given -e or -f has
-// its pattern supplied by that flag, so the first bare operand is then a path
-// rather than the pattern.
+// exprFlagsByArgv0 lists the flags that supply a command's pattern or inline
+// program, so its first bare operand is then a path rather than the program.
+//
+// The set is per-tool because the same spelling means different things. grep
+// and rg take their pattern from -e; jq's -e sets the exit status from the
+// output and supplies nothing, so treating it as an expression flag consumed
+// jq's real program as a path and dropped the input file behind it.
+var exprFlagsByArgv0 = map[string]map[string]bool{
+	"grep":     {"-e": true, "-f": true},
+	"egrep":    {"-e": true, "-f": true},
+	"fgrep":    {"-e": true, "-f": true},
+	"rg":       {"-e": true, "-f": true},
+	"ag":       {"-e": true, "-f": true},
+	"ack":      {"-e": true, "-f": true},
+	"git grep": {"-e": true, "-f": true},
+	"sed":      {"-e": true, "-f": true},
+	"awk":      {"-f": true},
+	"gawk":     {"-f": true},
+	// jq's program comes from -f or --from-file only. -e is the exit-status
+	// flag and -r, -c, -n and the rest supply no program either.
+	"jq": {"-f": true, "--from-file": true},
+}
+
+// exprFlagPrefixesByArgv0 lists the joined spellings of the same flags, where
+// the value is part of the token (--regexp=x) rather than a separate operand.
+var exprFlagPrefixesByArgv0 = map[string][]string{
+	"grep":     {"--regexp=", "--file="},
+	"egrep":    {"--regexp=", "--file="},
+	"fgrep":    {"--regexp=", "--file="},
+	"rg":       {"--regexp=", "--file="},
+	"ag":       {"--regexp=", "--file="},
+	"ack":      {"--regexp=", "--file="},
+	"git grep": {"--regexp=", "--file="},
+	"sed":      {"--expression=", "--file="},
+	"awk":      {"--file="},
+	"gawk":     {"--file="},
+	"jq":       {"--from-file="},
+}
+
+// newReadScan builds a scan for one command. A command given one of its own
+// expression flags has its pattern or program supplied by that flag, so the
+// first bare operand is then a path rather than the program.
 func newReadScan(argv0 string, args []rawArg) *readScan {
 	valueFlags := valueFlagsByArgv0[argv0]
 	if valueFlags == nil {
 		valueFlags = map[string]bool{}
 	}
+	exprFlags := exprFlagsByArgv0[argv0]
+	exprPrefixes := exprFlagPrefixesByArgv0[argv0]
 	hasExprFlag := false
 	for _, arg := range args {
-		if arg.text == "-e" || arg.text == "-f" ||
-			strings.HasPrefix(arg.text, "--regexp=") ||
-			strings.HasPrefix(arg.text, "--file=") {
+		if exprFlags[arg.text] {
 			hasExprFlag = true
+			continue
+		}
+		for _, prefix := range exprPrefixes {
+			if strings.HasPrefix(arg.text, prefix) {
+				hasExprFlag = true
+				break
+			}
 		}
 	}
 	twoValueFlags := twoValueFlagsByArgv0[argv0]
@@ -164,8 +210,7 @@ func (scan *readScan) handleFlag(index int) flagOutcome {
 			// The second value of a file-valued flag is data the command reads,
 			// unlike the name that precedes it.
 			if scan.fileValuedFlags[arg.text] {
-				value := scan.args[index+2]
-				outcome.dataPath = &value
+				outcome.dataPath = &scan.args[index+2]
 			}
 			return outcome
 		}
