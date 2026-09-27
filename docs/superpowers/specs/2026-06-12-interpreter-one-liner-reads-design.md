@@ -4,6 +4,12 @@ Date: 2026-06-12
 Status: approved
 Increment: 1 of 4 (python). awk, sed, perl are named follow-on increments.
 
+Grammar packaging changed after this spec was approved. The awk, dart, perl,
+and swift grammar sources are committed under `treesitter/grammars/<name>/src`
+instead of git submodules, and `scripts/vendor-grammars.sh` rebuilds them from
+the upstream commit that each grammar's `upstream.conf` pins. The submodule
+steps in this spec predate that change.
+
 ## Background
 
 shelldecomp parses a shell command and reports the files it reads as
