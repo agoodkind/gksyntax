@@ -11,21 +11,6 @@ LIBRARY := 1
 # Pipeline modules.
 GO_MK_MODULES := go-build.mk
 
-# Codegen hook: go.mk runs the grammars target as an order-only prerequisite of
-# every build, lint, vet, test, and govulncheck target, so the generated Swift
-# parser exists before any target compiles the grammar packages.
-GO_MK_GENERATE := grammars
-GO_MK_GENERATE_INPUTS := treesitter/grammars scripts
-GO_MK_GENERATE_OUTPUTS := \
-	treesitter/grammars/swift/upstream/src/parser.c \
-	treesitter/grammars/swift/upstream/src/tree_sitter/parser.h \
-	treesitter/grammars/swift/upstream/src/tree_sitter/array.h \
-	treesitter/grammars/swift/upstream/src/tree_sitter/alloc.h \
-	treesitter/grammars/perl/upstream/src/parser.c \
-	treesitter/grammars/perl/upstream/src/node-types.json \
-	treesitter/grammars/perl/upstream/src/tree_sitter/parser.h \
-	treesitter/grammars/perl/upstream/src/tree_sitter/array.h
-
 # bootstrap.mk fetches go.mk + golangci.yml + every module in GO_MK_MODULES
 # at parse time and -includes them. Update path: edit go-makefile/bootstrap.mk,
 # then refresh consumer copies (one-off cp; not enshrined as infrastructure).
@@ -34,61 +19,17 @@ include bootstrap.mk
 .DEFAULT_GOAL := check
 
 # ---------------------------------------------------------------------------
-# Grammar generation
+# Vendored grammars
 # ---------------------------------------------------------------------------
-# The Swift and Perl grammar submodules commit only their grammar definition
-# (and an external scanner), not the generated parser, so each parser is
-# produced from the pinned submodule by the tree-sitter CLI. The other grammars
-# commit their parser and need no step. The generated files stay inside the
-# submodule working tree (gitignored there) and are never committed to this
-# repository.
-#
-# Swift commits its own parser.c in upstream, so after generation the recipe
-# restores the tracked tree with `git checkout -- .`. Perl commits no parser.c,
-# so its generated parser.c and tree_sitter/ headers must be kept in place and
-# the recipe must not reset the Perl submodule tree.
-SWIFT_GRAMMAR_DIR := treesitter/grammars/swift/upstream
-SWIFT_GRAMMAR_DEF := $(SWIFT_GRAMMAR_DIR)/src/grammar.json
-SWIFT_GRAMMAR_PARSER := $(SWIFT_GRAMMAR_DIR)/src/parser.c
-PERL_GRAMMAR_DIR := treesitter/grammars/perl/upstream
-PERL_GRAMMAR_DEF := $(PERL_GRAMMAR_DIR)/src/grammar.json
-PERL_GRAMMAR_PARSER := $(PERL_GRAMMAR_DIR)/src/parser.c
-TREE_SITTER_ABI ?= 14
-# tree-sitter CLI lands here when the host has none on PATH, so a bare runner
-# with only Go can still generate the parsers. Gitignored.
-TREE_SITTER_LOCAL_DIR := $(CURDIR)/.bin
-
+# The awk, Dart, Perl, and Swift grammar C sources are committed under
+# treesitter/grammars/<name>/src. Build, lint, and test targets read them from
+# the checkout and need neither git submodules nor the tree-sitter CLI. A
+# consumer compiles the same sources from the Go module zip. grammars is a
+# manual target that runs scripts/vendor-grammars.sh to rebuild those sources
+# from the upstream commit and generator settings in each grammar's
+# upstream.conf. No build, lint, or test target depends on it. Commit the
+# rewritten src/ files after running it.
 .PHONY: grammars
 
 grammars:
-	@if [ ! -f "$(SWIFT_GRAMMAR_DEF)" ]; then \
-		echo "grammars: $(SWIFT_GRAMMAR_DIR) is empty; run 'git submodule update --init --recursive'"; \
-		exit 1; \
-	fi
-	@if [ ! -f "$(PERL_GRAMMAR_DEF)" ]; then \
-		echo "grammars: $(PERL_GRAMMAR_DIR) is empty; run 'git submodule update --init --recursive'"; \
-		exit 1; \
-	fi
-	@ts_bin="$$(command -v tree-sitter 2>/dev/null || true)"; \
-	if [ -z "$$ts_bin" ]; then \
-		./scripts/install-tree-sitter.sh "$(TREE_SITTER_LOCAL_DIR)"; \
-		ts_bin="$(TREE_SITTER_LOCAL_DIR)/tree-sitter"; \
-	fi; \
-	if [ ! -f "$(SWIFT_GRAMMAR_PARSER)" ] || [ "$(SWIFT_GRAMMAR_DEF)" -nt "$(SWIFT_GRAMMAR_PARSER)" ]; then \
-		echo "grammars: generating Swift parser (abi $(TREE_SITTER_ABI))"; \
-		( cd "$(SWIFT_GRAMMAR_DIR)" && "$$ts_bin" generate src/grammar.json --abi $(TREE_SITTER_ABI) ); \
-		git -C "$(SWIFT_GRAMMAR_DIR)" checkout -- . >/dev/null 2>&1 || true; \
-	else \
-		echo "grammars: Swift parser already generated"; \
-	fi; \
-	if [ ! -f "$(PERL_GRAMMAR_PARSER)" ] || [ "$(PERL_GRAMMAR_DEF)" -nt "$(PERL_GRAMMAR_PARSER)" ]; then \
-		echo "grammars: generating Perl parser (abi $(TREE_SITTER_ABI))"; \
-		( cd "$(PERL_GRAMMAR_DIR)" && "$$ts_bin" generate src/grammar.json --abi $(TREE_SITTER_ABI) ); \
-	else \
-		echo "grammars: Perl parser already generated"; \
-	fi
-
-# The order-only prerequisite that runs grammars before every compile, vet,
-# lint, test, and govulncheck target (including the lint split targets the CI
-# matrix calls directly) is wired centrally in go.mk via GO_MK_GENERATE (set
-# above), so no per-target list is maintained here.
+	./scripts/vendor-grammars.sh

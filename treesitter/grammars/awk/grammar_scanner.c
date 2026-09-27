@@ -1,3 +1,4 @@
-// Compiles the AWK external scanner from the pinned upstream submodule as its
-// own translation unit, separate from the parser so their macros do not collide.
-#include "upstream/src/scanner.c"
+// Compiles the vendored AWK external scanner in src/ as its own translation
+// unit. A separate unit keeps the scanner's macros from colliding with the
+// parser's macros.
+#include "src/scanner.c"

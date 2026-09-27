@@ -1,3 +1,2 @@
-// Compiles the Dart parser from the pinned upstream submodule as its own
-// translation unit.
-#include "upstream/src/parser.c"
+// Compiles the vendored Dart parser in src/ as its own translation unit.
+#include "src/parser.c"

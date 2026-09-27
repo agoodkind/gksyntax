@@ -1,4 +1,4 @@
-// Compiles the generated Perl parser from the pinned upstream submodule as its
-// own translation unit. The parser is produced by the `grammars` Makefile
-// target and is not stored in this repository.
-#include "upstream/src/parser.c"
+// Compiles the vendored Perl parser in src/ as its own translation unit.
+// scripts/vendor-grammars.sh generates src/parser.c from the upstream commit
+// that upstream.conf pins.
+#include "src/parser.c"
