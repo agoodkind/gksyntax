@@ -19,42 +19,17 @@ include bootstrap.mk
 .DEFAULT_GOAL := check
 
 # ---------------------------------------------------------------------------
-# Grammar generation
+# Vendored grammars
 # ---------------------------------------------------------------------------
-# The Swift grammar submodule commits only its grammar definition, not the
-# generated parser, so the parser is produced from the pinned submodule by the
-# tree-sitter CLI. The other grammars commit their parser and need no step. The
-# generated files stay inside the submodule working tree (gitignored there) and
-# are never committed to this repository.
-SWIFT_GRAMMAR_DIR := treesitter/grammars/swift/upstream
-SWIFT_GRAMMAR_DEF := $(SWIFT_GRAMMAR_DIR)/src/grammar.json
-SWIFT_GRAMMAR_PARSER := $(SWIFT_GRAMMAR_DIR)/src/parser.c
-TREE_SITTER_ABI ?= 14
-# tree-sitter CLI lands here when the host has none on PATH, so a bare runner
-# with only Go can still generate the Swift parser. Gitignored.
-TREE_SITTER_LOCAL_DIR := $(CURDIR)/.bin
-
+# The Swift and Dart grammar C sources are committed under
+# treesitter/grammars/<name>/src. Build, lint, and test targets read them from
+# the checkout and need neither git submodules nor the tree-sitter CLI. A
+# consumer compiles the same sources from the Go module zip. grammars is a
+# manual target that runs scripts/vendor-grammars.sh to rebuild those sources
+# from the upstream commit and generator settings in each grammar's
+# upstream.conf. No build, lint, or test target depends on it. Commit the
+# rewritten src/ files after running it.
 .PHONY: grammars
 
 grammars:
-	@if [ ! -f "$(SWIFT_GRAMMAR_DEF)" ]; then \
-		echo "grammars: $(SWIFT_GRAMMAR_DIR) is empty; run 'git submodule update --init --recursive'"; \
-		exit 1; \
-	fi
-	@ts_bin="$$(command -v tree-sitter 2>/dev/null || true)"; \
-	if [ -z "$$ts_bin" ]; then \
-		./scripts/install-tree-sitter.sh "$(TREE_SITTER_LOCAL_DIR)"; \
-		ts_bin="$(TREE_SITTER_LOCAL_DIR)/tree-sitter"; \
-	fi; \
-	if [ ! -f "$(SWIFT_GRAMMAR_PARSER)" ] || [ "$(SWIFT_GRAMMAR_DEF)" -nt "$(SWIFT_GRAMMAR_PARSER)" ]; then \
-		echo "grammars: generating Swift parser (abi $(TREE_SITTER_ABI))"; \
-		( cd "$(SWIFT_GRAMMAR_DIR)" && "$$ts_bin" generate src/grammar.json --abi $(TREE_SITTER_ABI) ); \
-		git -C "$(SWIFT_GRAMMAR_DIR)" checkout -- . >/dev/null 2>&1 || true; \
-	else \
-		echo "grammars: Swift parser already generated"; \
-	fi
-
-# Compiling, vetting, linting, and govulncheck all build the Swift grammar
-# package, so they need the generated parser. The order-only prerequisite
-# generates it first on a fresh checkout without forcing rebuilds.
-build build-check check test lint vet govulncheck: | grammars
+	./scripts/vendor-grammars.sh

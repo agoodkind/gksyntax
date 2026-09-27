@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Install a pinned tree-sitter CLI into a destination directory when no
-# tree-sitter is already on PATH. The Swift grammar submodule ships only its
-# grammar definition, so the parser is produced at build time by
-# `tree-sitter generate`; pinning the CLI keeps that generated output
-# reproducible across machines and CI. Downloads the official prebuilt release
-# binary so a fresh macOS or Debian/Ubuntu host needs no npm, cargo, or brew.
+# Install one tree-sitter CLI release into a destination directory. The
+# scripts/vendor-grammars.sh script passes the CLI version that a grammar's
+# upstream.conf records, because `tree-sitter generate` output differs between
+# CLI releases and the vendored parser must be reproducible byte for byte.
+# Downloads the official prebuilt release binary so a fresh macOS or
+# Debian/Ubuntu host needs no npm, cargo, or brew.
 set -euo pipefail
 
-readonly TREE_SITTER_VERSION="0.25.10"
-readonly DEST_DIR="${1:?usage: install-tree-sitter.sh <dest-dir>}"
+readonly DEST_DIR="${1:?usage: install-tree-sitter.sh <dest-dir> <version>}"
+readonly TREE_SITTER_VERSION="${2:?usage: install-tree-sitter.sh <dest-dir> <version>}"
 readonly DEST_BIN="${DEST_DIR}/tree-sitter"
 readonly RELEASE_BASE="https://github.com/tree-sitter/tree-sitter/releases/download"
 
@@ -43,17 +43,32 @@ detect_arch() {
     esac
 }
 
+# reported_version prints the version a tree-sitter binary reports, which is the
+# second field of `tree-sitter --version` ("tree-sitter 0.26.9").
+reported_version() {
+    local binary="$1"
+    local output version
+    output="$("${binary}" --version)"
+    read -r _ version _ <<<"${output}"
+    printf '%s\n' "${version}"
+}
+
 main() {
     if [[ -x "${DEST_BIN}" ]]; then
-        echo "install-tree-sitter: ${DEST_BIN} already present"
-        return 0
+        local present
+        present="$(reported_version "${DEST_BIN}")"
+        if [[ "${present}" == "${TREE_SITTER_VERSION}" ]]; then
+            echo "install-tree-sitter: ${DEST_BIN} v${present} already present"
+            return 0
+        fi
+        echo "install-tree-sitter: replacing ${DEST_BIN} v${present} with v${TREE_SITTER_VERSION}"
     fi
 
     local os arch
     os="$(detect_os)"
     arch="$(detect_arch)"
     if [[ "${os}" == unsupported:* || "${arch}" == unsupported:* ]]; then
-        echo "install-tree-sitter: ${os} ${arch} not supported; install tree-sitter manually" >&2
+        echo "install-tree-sitter: no prebuilt tree-sitter release for ${os} ${arch}" >&2
         return 1
     fi
 
@@ -70,7 +85,14 @@ main() {
     }
     gunzip -c "${GZ_TMP}" >"${DEST_BIN}"
     chmod +x "${DEST_BIN}"
-    echo "install-tree-sitter: installed ${DEST_BIN}"
+
+    local installed
+    installed="$(reported_version "${DEST_BIN}")"
+    if [[ "${installed}" != "${TREE_SITTER_VERSION}" ]]; then
+        echo "install-tree-sitter: ${DEST_BIN} reports v${installed}, expected v${TREE_SITTER_VERSION}" >&2
+        return 1
+    fi
+    echo "install-tree-sitter: installed ${DEST_BIN} v${installed}"
 }
 
 main

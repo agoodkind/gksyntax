@@ -1,13 +1,14 @@
-// Package dart exposes the tree-sitter Dart grammar to the splitter. The
-// grammar's generated parser and external scanner live in the pinned upstream/
-// git submodule and are each compiled as their own translation unit through the
-// grammar_parser.c and grammar_scanner.c shims in this directory, which keeps
-// their macros from colliding. Dart has no maintained Go-module binding against
-// this runtime, so the grammar is pinned as a submodule rather than a module
-// dependency.
+// Package dart exposes the tree-sitter Dart grammar to the splitter. Dart has
+// no maintained Go-module binding against this runtime, and this package
+// vendors the grammar's C sources under src/ instead. scripts/vendor-grammars.sh
+// copies the generated parser and the external scanner into src/ from the
+// upstream commit that upstream.conf pins. The grammar_parser.c and
+// grammar_scanner.c shims in this directory compile src/parser.c and
+// src/scanner.c as separate translation units. Separate units prevent
+// collisions between the parser's macros and the scanner's macros.
 package dart
 
-// #cgo CFLAGS: -std=c11 -fPIC -I${SRCDIR}/upstream/src
+// #cgo CFLAGS: -std=c11 -fPIC -I${SRCDIR}/src
 // typedef struct TSLanguage TSLanguage;
 // const TSLanguage *tree_sitter_dart(void);
 import "C"
