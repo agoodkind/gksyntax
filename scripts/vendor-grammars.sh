@@ -8,10 +8,11 @@
 # Without names, the script processes every grammar directory that contains an
 # upstream.conf. For each grammar it fetches the pinned commit, generates the
 # parser with the pinned tree-sitter CLI when the manifest sets
-# parser=generate, and stages src/parser.c, src/scanner.c, src/tree_sitter/*.h,
-# and the upstream LICENSE as src/LICENSE. The default mode replaces src/ with
-# the staged files. --check compares the staged files with the committed src/
-# and exits nonzero on any difference without writing to the repository.
+# parser=generate, and stages src/parser.c, src/scanner.c, every header file
+# under src/, and the upstream LICENSE as src/LICENSE. The default mode
+# replaces src/ with the staged files. --check compares the staged files with
+# the committed src/ and exits nonzero on any difference without writing to
+# the repository.
 #
 # The go build cache keys a cgo package on the files in its own directory. Each
 # grammar package compiles src/ through the #include lines in its
@@ -30,12 +31,9 @@ readonly GRAMMARS_DIR="${REPO_ROOT}/treesitter/grammars"
 readonly TOOLS_DIR="${REPO_ROOT}/.bin"
 readonly MANIFEST_NAME="upstream.conf"
 readonly USAGE="usage: scripts/vendor-grammars.sh [--check] [<name>...]"
-readonly VENDORED_FILES=(
+readonly VENDORED_SOURCES=(
     src/parser.c
     src/scanner.c
-    src/tree_sitter/alloc.h
-    src/tree_sitter/array.h
-    src/tree_sitter/parser.h
 )
 
 # The EXIT trap removes WORK_DIR wherever the run stopped. WORK_DIR is
@@ -107,16 +105,31 @@ generate_parser() {
     )
 }
 
-# stage_sources copies the vendored file set and the upstream LICENSE from a
-# checkout into a staging directory laid out like the grammar directory.
+# stage_file copies one checkout-relative file to the same relative path under
+# the staging directory.
+stage_file() {
+    local checkout="$1"
+    local stage="$2"
+    local relative="$3"
+    mkdir -p "$(dirname "${stage}/${relative}")"
+    cp "${checkout}/${relative}" "${stage}/${relative}"
+}
+
+# stage_sources copies parser.c, scanner.c, every header file under src/, and
+# the upstream LICENSE from a checkout into a staging directory laid out like
+# the grammar directory. A scanner can include headers of its own beside the
+# tree_sitter/ runtime headers, and those headers must be vendored with it.
 stage_sources() {
     local checkout="$1"
     local stage="$2"
     local relative
-    for relative in "${VENDORED_FILES[@]}"; do
-        mkdir -p "$(dirname "${stage}/${relative}")"
-        cp "${checkout}/${relative}" "${stage}/${relative}"
+    for relative in "${VENDORED_SOURCES[@]}"; do
+        stage_file "${checkout}" "${stage}" "${relative}"
     done
+    local header
+    while IFS= read -r header; do
+        stage_file "${checkout}" "${stage}" "${header#"${checkout}/"}"
+    done < <(find "${checkout}/src" -type f -name '*.h')
     cp "${checkout}/LICENSE" "${stage}/src/LICENSE"
 }
 
