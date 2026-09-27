@@ -69,14 +69,14 @@ func TestParallelEmbeddingIsParsedShell(t *testing.T) {
 	}
 }
 
-func TestPerlEmbeddingIsOpaque(t *testing.T) {
+func TestPerlEmbeddingIsParsedPerl(t *testing.T) {
 	decomposition := Parse(`perl -e "print 1"`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangPerl {
 		t.Fatalf("perl region lang = %v, want LangPerl", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("perl embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("perl embedding should be parsed (perl grammar exists)")
 	}
 }
 
@@ -102,36 +102,55 @@ func TestRubyEmbeddingIsParsedRuby(t *testing.T) {
 	}
 }
 
-func TestOsascriptEmbeddingIsOpaque(t *testing.T) {
+func TestOsascriptEmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`osascript -e 'display dialog "hi"'`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangAppleScript {
 		t.Fatalf("osascript region lang = %v, want LangAppleScript", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("osascript embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("osascript embedding should be parsed (LangAppleScript has a registered text-scan analyzer, even with no grammar)")
 	}
 }
 
-func TestSqlite3EmbeddingIsOpaque(t *testing.T) {
+func TestSqlite3EmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`sqlite3 db.sqlite "select 1"`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangSQL {
 		t.Fatalf("sqlite3 region lang = %v, want LangSQL", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("sqlite3 embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("sqlite3 embedding should be parsed (LangSQL has a registered text-scan analyzer, even with no grammar)")
 	}
 }
 
-func TestAwkEmbeddingIsOpaque(t *testing.T) {
+// TestSqlite3MultilineEmbeddingPreservesNewline covers the reported bug: a
+// multi-line double-quoted sqlite3 script reached through Parse, the path a
+// real caller uses (dispatchSqlite3 reads the argument's already-resolved
+// Word.Value, produced by literalStringValue). Before the fix, the newline
+// between the two SQL statements was dropped, fusing "mytable" and "ATTACH"
+// into "mytableATTACH". The fix must preserve the newline exactly.
+func TestSqlite3MultilineEmbeddingPreservesNewline(t *testing.T) {
+	command := "sqlite3 db.sqlite \".import /data/in.csv mytable\nATTACH DATABASE '/other/aux.db' AS aux;\""
+	decomposition := Parse(command, "/w", "/home/u")
+	region := onlyRegion(t, decomposition)
+	if region.Lang != LangSQL {
+		t.Fatalf("sqlite3 region lang = %v, want LangSQL", region.Lang)
+	}
+	want := ".import /data/in.csv mytable\nATTACH DATABASE '/other/aux.db' AS aux;"
+	if region.Text != want {
+		t.Fatalf("sqlite3 region text = %q, want %q", region.Text, want)
+	}
+}
+
+func TestAwkEmbeddingIsParsed(t *testing.T) {
 	decomposition := Parse(`awk '{print}' f`, "/w", "/home/u")
 	region := onlyRegion(t, decomposition)
 	if region.Lang != LangAwk {
 		t.Fatalf("awk region lang = %v, want LangAwk", region.Lang)
 	}
-	if region.Parsed != nil {
-		t.Fatal("awk embedding should be opaque (no grammar, nil Parsed)")
+	if region.Parsed == nil {
+		t.Fatal("awk embedding should be parsed (awk grammar exists)")
 	}
 }
 

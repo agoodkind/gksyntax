@@ -20,6 +20,7 @@ type Decomposition struct {
 	source   []byte
 	lang     Lang
 	commands []Command
+	assigns  []Assignment
 	reads    []ReadTarget
 	writes   []WriteTarget
 	embedded []EmbeddedRegion
@@ -36,30 +37,40 @@ type cwdSpan struct {
 }
 
 // walker carries the parse state threaded through the recursive tree walk: the
-// source bytes, the remaining depth budget, and the accumulating result.
+// source bytes, the remaining depth budget, the accumulating result, the
+// optional resolver that reads an interpreter script off disk, and the visited
+// set that stops a self-referential script from looping.
 type walker struct {
-	source  []byte
-	homeDir string
-	depth   int
-	result  *Decomposition
+	source      []byte
+	homeDir     string
+	depth       int
+	result      *Decomposition
+	resolver    FileResolver
+	visited     *visitedSet
+	nextScopeID int
 }
 
 // Parse decomposes a shell command starting in baseCwd, using homeDir to
 // expand a leading tilde. baseCwd is an absolute directory or "" when the
 // starting directory is unknown. Unparseable input becomes a single Opaque
-// decomposition; Parse never panics.
+// decomposition; Parse never panics. Parse reads no files off disk; use
+// ParseWithOptions with a FileResolver to analyze an interpreter's script file.
 func Parse(command string, baseCwd string, homeDir string) *Decomposition {
-	return parseShell([]byte(command), baseCwd, homeDir, DefaultMaxDepth)
+	return parseShellOpts([]byte(command), baseCwd, homeDir, DefaultMaxDepth, nil, newVisitedSet())
 }
 
-// parseShell is the depth-aware shell parser shared by Parse and the recursive
-// embedded-code paths. depth is the remaining recursion budget; at zero it
-// returns an Opaque decomposition without descending further.
-func parseShell(source []byte, baseCwd string, homeDir string, depth int) *Decomposition {
+// parseShellOpts is the depth-aware shell parser shared by Parse,
+// ParseWithOptions, and the recursive embedded-code paths. depth is the
+// remaining recursion budget; at zero it returns an Opaque decomposition
+// without descending further. resolver, when non-nil, lets an interpreter
+// script be read off disk; visited stops a self-referential script from
+// looping. Both are threaded onto the walker so nested parses keep the seam.
+func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, resolver FileResolver, visited *visitedSet) *Decomposition {
 	result := &Decomposition{
 		source:   source,
 		lang:     LangShell,
 		commands: nil,
+		assigns:  nil,
 		reads:    nil,
 		writes:   nil,
 		embedded: nil,
@@ -93,9 +104,17 @@ func parseShell(source []byte, baseCwd string, homeDir string, depth int) *Decom
 		return opaqueDecomposition(source, LangShell)
 	}
 
-	currentScope := newScope(baseCwd, homeDir)
+	currentScope := newScope(baseCwd, homeDir, 0)
 	result.recordCwd(0, currentScope.cwd)
-	walk := &walker{source: source, homeDir: homeDir, depth: depth, result: result}
+	walk := &walker{
+		source:      source,
+		homeDir:     homeDir,
+		depth:       depth,
+		result:      result,
+		resolver:    resolver,
+		visited:     visited,
+		nextScopeID: 1,
+	}
 	walk.walkSequence(root, &currentScope)
 	return result
 }
@@ -108,6 +127,7 @@ func opaqueDecomposition(source []byte, lang Lang) *Decomposition {
 		source:   source,
 		lang:     lang,
 		commands: nil,
+		assigns:  nil,
 		reads:    nil,
 		writes:   nil,
 		embedded: nil,
@@ -150,7 +170,7 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 		return
 	}
 	if kind == kindSubshell {
-		childScope := currentScope.child()
+		childScope := currentScope.child(walk.allocateScopeID())
 		walk.walkSequence(node, &childScope)
 		return
 	}
@@ -162,7 +182,18 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 		walk.walkCommand(node, currentScope, firstStage)
 		return
 	}
+	if kind == kindVariableAssignment {
+		walk.walkAssignment(node, currentScope)
+		return
+	}
 	walk.walkSequence(node, currentScope)
+}
+
+// allocateScopeID returns a parse-local identifier for a child shell scope.
+func (walk *walker) allocateScopeID() int {
+	id := walk.nextScopeID
+	walk.nextScopeID++
+	return id
 }
 
 // walkPipeline walks the stages of a pipeline in the shared scope, marking
@@ -193,16 +224,42 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, 
 		walk.walkSequence(node, currentScope)
 		return
 	}
-	argv0, args := extractCommand(body, walk.source)
-	command := walk.buildCommand(body, argv0, args, currentScope)
 
-	if command.Kind == CommandKindNav && command.Argv0 == "cd" {
-		currentScope.applyCd(command.Args)
-		walk.result.recordCwd(body.StartByte(), currentScope.cwd)
+	// tree-sitter-bash attaches a trailing redirect to the whole preceding
+	// chain, so `cd X && git Y 2>&1` parses as a redirected_statement whose body
+	// is the && list (or a pipeline), not a bare command. Extracting a command
+	// from that compound body yields an empty argv0 and drops the inner cd and
+	// git, which erases the cwd model. Recurse into a list or pipeline body so its
+	// inner commands, cd effects, and targets are classified, then bind the
+	// redirects to the last command, which is what the redirect attaches to.
+	//
+	// A group ({ ...; }) or subshell body is left to the simple-command path
+	// below: its redirect applies to the whole group and is set up in the cwd
+	// before the group runs, so it must resolve against the unmutated scope. The
+	// simple path does not walk the group's inner cd, so the scope stays put.
+	var command Command
+	if kind := nodeKind(body.Kind()); kind == kindList || kind == kindPipeline {
+		before := len(walk.result.commands)
+		walk.walkNode(body, currentScope, firstStage)
+		// Bind the redirect to the last command this body actually added, not to
+		// an unrelated earlier command from the outer walk. A body that adds no
+		// command (only assignments, say) leaves command zero so the redirect
+		// binds to nothing rather than mis-binding.
+		if len(walk.result.commands) > before {
+			command = walk.result.commands[len(walk.result.commands)-1]
+		}
+	} else {
+		argv0, args := extractCommand(body, walk.source, currentScope)
+		command = walk.buildCommand(body, argv0, args, currentScope)
+
+		if command.Kind == CommandKindNav && command.Argv0 == "cd" {
+			currentScope.applyCd(command.Args)
+			walk.result.recordCwd(body.StartByte(), currentScope.cwd)
+		}
+		walk.collectReadTargets(command, args, currentScope, firstStage)
+		walk.collectInlineWrites(command, args, currentScope)
+		walk.dispatchEmbedded(body, command, args, currentScope)
 	}
-	walk.collectReadTargets(command, args, currentScope, firstStage)
-	walk.collectInlineWrites(command, args, currentScope)
-	walk.dispatchEmbedded(body, command, args, currentScope)
 
 	for index := range node.ChildCount() {
 		child := node.Child(index)

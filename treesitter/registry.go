@@ -28,7 +28,9 @@ import (
 	tree_sitter_rust "github.com/tree-sitter/tree-sitter-rust/bindings/go"
 	tree_sitter_scala "github.com/tree-sitter/tree-sitter-scala/bindings/go"
 	tree_sitter_typescript "github.com/tree-sitter/tree-sitter-typescript/bindings/go"
+	tree_sitter_awk "goodkind.io/gksyntax/treesitter/grammars/awk"
 	tree_sitter_dart "goodkind.io/gksyntax/treesitter/grammars/dart"
+	tree_sitter_perl "goodkind.io/gksyntax/treesitter/grammars/perl"
 	tree_sitter_swift "goodkind.io/gksyntax/treesitter/grammars/swift"
 )
 
@@ -52,6 +54,7 @@ const (
 	grammarCSharp     grammarKey = "csharp"
 	grammarCS         grammarKey = "cs"
 	grammarPHP        grammarKey = "php"
+	grammarPHPOnly    grammarKey = "php_only"
 	grammarRuby       grammarKey = "ruby"
 	grammarBash       grammarKey = "bash"
 	grammarJSON       grammarKey = "json"
@@ -61,6 +64,8 @@ const (
 	grammarObjectiveC grammarKey = "objective-c"
 	grammarDart       grammarKey = "dart"
 	grammarSwift      grammarKey = "swift"
+	grammarAwk        grammarKey = "awk"
+	grammarPerl       grammarKey = "perl"
 )
 
 // extensionLanguages maps a file extension to a language id understood by
@@ -96,6 +101,9 @@ var extensionLanguages = map[string]string{
 	".sh":       "bash",
 	".bash":     "bash",
 	".json":     "json",
+	".awk":      "awk",
+	".pl":       "perl",
+	".pm":       "perl",
 	".css":      "css",
 	".html":     "html",
 	".htm":      "html",
@@ -105,6 +113,11 @@ var extensionLanguages = map[string]string{
 // GrammarForLanguage returns the tree-sitter language for a language id and
 // whether a grammar is registered for it. A false second return is a normal
 // result: the caller treats the input as unparseable rather than an error.
+// "php" and "php_only" are two dialects of the same tree-sitter-php module:
+// "php" is the tag-aware document grammar for a whole .php file, whose program
+// rule treats any input before a leading <?php tag as opaque text, and
+// "php_only" is the untagged dialect that parses a bare sequence of statements
+// with no tag at all, the shape of a `php -r` script body.
 func GrammarForLanguage(language string) (*tree_sitter.Language, bool) {
 	switch grammarKey(strings.ToLower(language)) {
 	case grammarJavaScript, grammarJS:
@@ -129,6 +142,8 @@ func GrammarForLanguage(language string) (*tree_sitter.Language, bool) {
 		return tree_sitter.NewLanguage(tree_sitter_csharp.Language()), true
 	case grammarPHP:
 		return tree_sitter.NewLanguage(tree_sitter_php.LanguagePHP()), true
+	case grammarPHPOnly:
+		return tree_sitter.NewLanguage(tree_sitter_php.LanguagePHPOnly()), true
 	case grammarRuby:
 		return tree_sitter.NewLanguage(tree_sitter_ruby.Language()), true
 	case grammarBash:
@@ -147,6 +162,10 @@ func GrammarForLanguage(language string) (*tree_sitter.Language, bool) {
 		return tree_sitter.NewLanguage(tree_sitter_dart.Language()), true
 	case grammarSwift:
 		return tree_sitter.NewLanguage(tree_sitter_swift.Language()), true
+	case grammarAwk:
+		return tree_sitter.NewLanguage(tree_sitter_awk.Language()), true
+	case grammarPerl:
+		return tree_sitter.NewLanguage(tree_sitter_perl.Language()), true
 	default:
 		return nil, false
 	}

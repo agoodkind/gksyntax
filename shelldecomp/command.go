@@ -20,14 +20,16 @@ type Word struct {
 // Command is one simple command extracted from the shell source in source
 // order. Argv0 is the program name after wrapper stripping (env/sudo), Args are
 // its classified operands, Cwd is the absolute directory in effect when the
-// command runs or Unresolvable, Kind is its CommandKind, and Node points at the
-// classified syntax node the command came from.
+// command runs or Unresolvable, ScopeID identifies the shell scope that ran the
+// command, Kind is its CommandKind, and Node points at the classified syntax
+// node the command came from.
 type Command struct {
-	Argv0 string
-	Args  []Word
-	Cwd   string
-	Kind  string
-	Node  *Node
+	Argv0   string
+	Args    []Word
+	Cwd     string
+	ScopeID int
+	Kind    string
+	Node    *Node
 }
 
 // ReadTarget is a file a command reads. Path is an absolute path when
@@ -39,6 +41,7 @@ type ReadTarget struct {
 	Resolvable bool
 	Argv0      string
 	Cwd        string
+	ScopeID    int
 	Raw        string
 }
 
@@ -51,7 +54,22 @@ type WriteTarget struct {
 	Resolvable bool
 	Argv0      string
 	Cwd        string
+	ScopeID    int
 	Raw        string
+}
+
+// Assignment is a shell variable assignment found while walking a shell syntax
+// tree. Name is set only for simple variable names, Value is the literal value
+// when Resolvable is true, and ScopeID identifies the shell scope where the
+// assignment was made.
+type Assignment struct {
+	Name       string
+	Value      string
+	Resolvable bool
+	ScopeID    int
+	StartByte  uint
+	EndByte    uint
+	Text       string
 }
 
 // EmbeddedRegion is a span of foreign code found inside a command: a heredoc
@@ -163,7 +181,7 @@ type rawArg struct {
 // strips env and sudo wrappers so argv0 is the real program. The returned
 // argv0 is "" when the command name is not a literal word (for example a bare
 // command substitution as the whole command).
-func extractCommand(node *tree_sitter.Node, source []byte) (string, []rawArg) {
+func extractCommand(node *tree_sitter.Node, source []byte, currentScope *scope) (string, []rawArg) {
 	nameNode := node.ChildByFieldName("name")
 	args := make([]rawArg, 0)
 	for index := range node.ChildCount() {
@@ -174,7 +192,7 @@ func extractCommand(node *tree_sitter.Node, source []byte) (string, []rawArg) {
 		if node.FieldNameForChild(uint32(index)) != "argument" {
 			continue
 		}
-		args = append(args, resolveArgNode(child, source))
+		args = append(args, resolveArgNode(child, source, currentScope))
 	}
 
 	argv0 := ""

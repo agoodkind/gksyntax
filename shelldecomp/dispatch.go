@@ -20,6 +20,10 @@ type Embedding struct {
 	Lang      Lang
 	NewScope  bool
 	AsCommand bool
+	// Argv carries the bare operands that follow an interpreter's program slot,
+	// so an analyzer can resolve sys.argv[N] references inside the program. It is
+	// empty for embeddings whose language takes no argv (a heredoc, a -c shell).
+	Argv []string
 }
 
 // Dispatcher inspects a classified command and returns the embedded code it
@@ -63,11 +67,14 @@ func lookupDispatcher(argv0 string) (Dispatcher, bool) {
 func (walk *walker) dispatchEmbedded(node *tree_sitter.Node, command Command, args []rawArg, currentScope *scope) {
 	_ = node
 	_ = args
-	dispatcher, found := lookupDispatcher(command.Argv0)
-	if !found {
-		return
+	embeddings, handled := walk.pythonEmbeddings(command, currentScope)
+	if !handled {
+		dispatcher, found := lookupDispatcher(command.Argv0)
+		if !found {
+			return
+		}
+		embeddings = dispatcher(command, walk.source)
 	}
-	embeddings := dispatcher(command, walk.source)
 	for _, embedding := range embeddings {
 		region := walk.buildEmbeddedRegion(embedding, currentScope)
 		walk.result.embedded = append(walk.result.embedded, region)
@@ -104,9 +111,52 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 	}
 	grammarName := embedding.Lang.grammarName()
 	if grammarName == "" {
+		return walk.analyzeGrammarlessEmbedding(embedding, currentScope)
+	}
+	return parseForeign(
+		grammarName,
+		[]byte(embedding.Text),
+		embedding.Lang,
+		walk.depth-1,
+		embedding.Argv,
+		currentScope.cwd,
+		walk.homeDir,
+		walk.resolver,
+		walk.visited,
+	)
+}
+
+// analyzeGrammarlessEmbedding runs a registered analyzer over an embedding whose
+// language has no tree-sitter grammar, passing the program text as Source with a
+// nil Root. It serves a mini-language whose file commands are a small regular
+// sub-language read more reliably from text than from an inadequate grammar
+// (sed's r/w commands). A language with no registered analyzer returns nil, so
+// the region stays located but unparsed exactly as before.
+func (walk *walker) analyzeGrammarlessEmbedding(embedding Embedding, currentScope *scope) *Decomposition {
+	analyzer, ok := lookupAnalyzer(embedding.Lang)
+	if !ok {
 		return nil
 	}
-	return parseForeign(grammarName, []byte(embedding.Text), embedding.Lang, walk.depth-1)
+	reads, writes := analyzer(AnalyzerInput{
+		Root:     nil,
+		Source:   []byte(embedding.Text),
+		Argv:     embedding.Argv,
+		Cwd:      currentScope.cwd,
+		Home:     walk.homeDir,
+		Resolver: walk.resolver,
+		Visited:  walk.visited,
+		Depth:    walk.depth - 1,
+	})
+	return &Decomposition{
+		source:   []byte(embedding.Text),
+		lang:     embedding.Lang,
+		commands: nil,
+		reads:    reads,
+		writes:   writes,
+		embedded: nil,
+		cwdSpans: nil,
+		opaque:   false,
+	}
 }
 
 // parseShellEmbedding parses a shell embedding's body. An AsCommand embedding is
@@ -115,9 +165,9 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 func (walk *walker) parseShellEmbedding(embedding Embedding, currentScope *scope) *Decomposition {
 	baseCwd := currentScope.cwd
 	if embedding.NewScope {
-		baseCwd = currentScope.child().cwd
+		baseCwd = currentScope.cwd
 	}
-	return parseShell([]byte(embedding.Text), baseCwd, walk.homeDir, walk.depth-1)
+	return parseShellOpts([]byte(embedding.Text), baseCwd, walk.homeDir, walk.depth-1, walk.resolver, walk.visited)
 }
 
 // flagValueEmbedding extracts the value of a flag (for example -c or -e) as a

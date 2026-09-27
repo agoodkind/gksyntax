@@ -6,6 +6,28 @@ func (decomposition *Decomposition) Commands() []Command {
 	return decomposition.commands
 }
 
+// Assignments returns shell variable assignments found in source order.
+func (decomposition *Decomposition) Assignments() []Assignment {
+	return decomposition.assigns
+}
+
+// ResolveWord resolves a word at byteOffset using same-scope literal
+// assignments that appeared earlier in the parsed source. It returns false when
+// the word cannot be pinned without consulting ambient shell state.
+func (decomposition *Decomposition) ResolveWord(text string, scopeID int, byteOffset uint) (string, bool) {
+	assignments := make(map[string]assignmentValue)
+	for _, assignment := range decomposition.assigns {
+		if assignment.ScopeID != scopeID || assignment.EndByte > byteOffset {
+			continue
+		}
+		assignments[assignment.Name] = assignmentValue{
+			value:      assignment.Value,
+			resolvable: assignment.Resolvable,
+		}
+	}
+	return resolveExpansionText(text, assignments)
+}
+
 // ReadTargets returns the files the commands read, resolved against the cwd in
 // effect at each command. A target that cannot be pinned to a literal has
 // Resolvable false and Path Unresolvable.

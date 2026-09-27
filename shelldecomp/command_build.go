@@ -11,7 +11,7 @@ import (
 // firstStage reports whether the command is the first stage of its pipeline,
 // which decides whether a search command with no path operand reads stdin.
 func (walk *walker) walkCommand(node *tree_sitter.Node, currentScope *scope, firstStage bool) {
-	argv0, args := extractCommand(node, walk.source)
+	argv0, args := extractCommand(node, walk.source, currentScope)
 	command := walk.buildCommand(node, argv0, args, currentScope)
 
 	if command.Kind == CommandKindNav && command.Argv0 == "cd" {
@@ -20,6 +20,7 @@ func (walk *walker) walkCommand(node *tree_sitter.Node, currentScope *scope, fir
 	}
 
 	walk.collectReadTargets(command, args, currentScope, firstStage)
+	walk.perlOperandReads(command, currentScope)
 	walk.collectInlineWrites(command, args, currentScope)
 	walk.dispatchEmbedded(node, command, args, currentScope)
 }
@@ -34,11 +35,12 @@ func (walk *walker) buildCommand(node *tree_sitter.Node, argv0 string, args []ra
 	classified := classifyArgv0(argv0)
 	commandNode := nodeFromTreeSitter(node, walk.source, LangShell)
 	command := Command{
-		Argv0: argv0,
-		Args:  words,
-		Cwd:   currentScope.cwd,
-		Kind:  classified,
-		Node:  commandNode,
+		Argv0:   argv0,
+		Args:    words,
+		Cwd:     currentScope.cwd,
+		ScopeID: currentScope.id,
+		Kind:    classified,
+		Node:    commandNode,
 	}
 	walk.result.commands = append(walk.result.commands, command)
 	return command
@@ -105,10 +107,12 @@ var valueFlagsByArgv0 = map[string]map[string]bool{
 	},
 	"ag": {"-G": true, "--file-search-regex": true},
 	// sed -e/-f supply the editing script; awk -f supplies the program and
-	// -F/-v supply the separator and a variable. Their values are not paths.
+	// -F/-v supply the separator and a variable. The gawk -i extension loads a
+	// library (-i inplace), so its value operand is not a data path either. None
+	// of these values are read paths.
 	"sed":  {"-e": true, "-f": true},
-	"awk":  {"-F": true, "-v": true, "-f": true},
-	"gawk": {"-F": true, "-v": true, "-f": true},
+	"awk":  {"-F": true, "-v": true, "-f": true, "-i": true},
+	"gawk": {"-F": true, "-v": true, "-f": true, "-i": true},
 	// jq's flags carry the program or named arguments, not data paths; stat's
 	// -f format and -t format string are not paths.
 	"jq":   {"-f": true, "--from-file": true, "--arg": true, "--argjson": true, "--slurpfile": true, "--rawfile": true},
@@ -214,6 +218,7 @@ func cwdReadTarget(argv0 string, currentScope *scope) ReadTarget {
 		Resolvable: resolvable,
 		Argv0:      argv0,
 		Cwd:        currentScope.cwd,
+		ScopeID:    currentScope.id,
 		Raw:        ".",
 	}
 }
@@ -228,6 +233,7 @@ func resolveReadTarget(argv0 string, token rawArg, currentScope *scope) ReadTarg
 			Resolvable: false,
 			Argv0:      argv0,
 			Cwd:        currentScope.cwd,
+			ScopeID:    currentScope.id,
 			Raw:        token.text,
 		}
 	}
@@ -238,6 +244,7 @@ func resolveReadTarget(argv0 string, token rawArg, currentScope *scope) ReadTarg
 			Resolvable: false,
 			Argv0:      argv0,
 			Cwd:        currentScope.cwd,
+			ScopeID:    currentScope.id,
 			Raw:        token.text,
 		}
 	}
@@ -246,6 +253,7 @@ func resolveReadTarget(argv0 string, token rawArg, currentScope *scope) ReadTarg
 		Resolvable: true,
 		Argv0:      argv0,
 		Cwd:        currentScope.cwd,
+		ScopeID:    currentScope.id,
 		Raw:        token.text,
 	}
 }

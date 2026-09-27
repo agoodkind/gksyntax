@@ -21,7 +21,7 @@ include bootstrap.mk
 # ---------------------------------------------------------------------------
 # Vendored grammars
 # ---------------------------------------------------------------------------
-# The Swift and Dart grammar C sources are committed under
+# The awk, Dart, Perl, and Swift grammar C sources are committed under
 # treesitter/grammars/<name>/src. Build, lint, and test targets read them from
 # the checkout and need neither git submodules nor the tree-sitter CLI. A
 # consumer compiles the same sources from the Go module zip. grammars is a
