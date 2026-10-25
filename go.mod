@@ -2,6 +2,8 @@ module goodkind.io/gksyntax
 
 go 1.26.5
 
+toolchain go1.27.3
+
 require (
 	github.com/tree-sitter-grammars/tree-sitter-kotlin v1.1.0
 	github.com/tree-sitter-grammars/tree-sitter-objc v1.2.1-0.20250131075517-181a81b8f23a
