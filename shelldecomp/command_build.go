@@ -34,16 +34,31 @@ func (walk *walker) buildCommand(node *tree_sitter.Node, argv0 string, args []ra
 	}
 	classified := classifyArgv0(argv0)
 	commandNode := nodeFromTreeSitter(node, walk.source, LangShell)
+	pipelineStart, pipelineEnd := containingPipeline(node)
 	command := Command{
-		Argv0:   argv0,
-		Args:    words,
-		Cwd:     currentScope.cwd,
-		ScopeID: currentScope.id,
-		Kind:    classified,
-		Node:    commandNode,
+		PipelineStartByte: pipelineStart,
+		PipelineEndByte:   pipelineEnd,
+		Argv0:             argv0,
+		Args:              words,
+		Cwd:               currentScope.cwd,
+		ScopeID:           currentScope.id,
+		Kind:              classified,
+		Node:              commandNode,
 	}
 	walk.result.commands = append(walk.result.commands, command)
 	return command
+}
+
+func containingPipeline(node *tree_sitter.Node) (uint, uint) {
+	for parent := node.Parent(); parent != nil; parent = parent.Parent() {
+		switch parent.Kind() {
+		case "pipeline":
+			return parent.StartByte(), parent.EndByte()
+		case "subshell", "command_substitution", "process_substitution", "function_definition":
+			return 0, 0
+		}
+	}
+	return 0, 0
 }
 
 // classifyWord turns a raw operand into a classified Word, marking a flag, an

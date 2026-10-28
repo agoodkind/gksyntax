@@ -24,12 +24,16 @@ type Word struct {
 // command, Kind is its CommandKind, and Node points at the classified syntax
 // node the command came from.
 type Command struct {
-	Argv0   string
-	Args    []Word
-	Cwd     string
-	ScopeID int
-	Kind    string
-	Node    *Node
+	// PipelineStartByte and PipelineEndByte identify the containing pipeline.
+	// Both fields are zero when this command is outside a pipeline.
+	PipelineStartByte uint
+	PipelineEndByte   uint
+	Argv0             string
+	Args              []Word
+	Cwd               string
+	ScopeID           int
+	Kind              string
+	Node              *Node
 }
 
 // ReadTarget is a file a command reads. Path is an absolute path when
