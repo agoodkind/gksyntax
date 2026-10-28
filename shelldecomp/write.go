@@ -26,7 +26,12 @@ func (walk *walker) handleFileRedirect(node *tree_sitter.Node, command Command, 
 		return
 	}
 	token := resolveArgNode(destination, walk.source, currentScope)
-	walk.result.writes = append(walk.result.writes, resolveWriteTarget(command.Argv0, token, currentScope))
+	target := resolveWriteTarget(command.Argv0, token, currentScope)
+	target.Origin = WriteOriginRedirect
+	if command.Node != nil {
+		target.CommandStartByte = command.Node.StartByte
+	}
+	walk.result.writes = append(walk.result.writes, target)
 }
 
 // outputRedirectOps are the file_redirect operator tokens that write a file.
@@ -57,6 +62,15 @@ func isOutputRedirect(node *tree_sitter.Node) bool {
 // operands rather than a redirect: tee files, dd of=, sed -i, awk -i inplace,
 // patch <file>, and git apply <file>.
 func (walk *walker) collectInlineWrites(command Command, args []rawArg, currentScope *scope) {
+	first := len(walk.result.writes)
+	defer func() {
+		for index := first; index < len(walk.result.writes); index++ {
+			walk.result.writes[index].Origin = WriteOriginArgument
+			if command.Node != nil {
+				walk.result.writes[index].CommandStartByte = command.Node.StartByte
+			}
+		}
+	}()
 	argv0 := command.Argv0
 	if argv0 == "tee" {
 		walk.teeWrites(argv0, args, currentScope)

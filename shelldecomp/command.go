@@ -50,13 +50,24 @@ type ReadTarget struct {
 // writing command, Cwd is the directory the path was resolved against, and Raw
 // is the original token text.
 type WriteTarget struct {
-	Path       string
-	Resolvable bool
-	Argv0      string
-	Cwd        string
-	ScopeID    int
-	Raw        string
+	// Origin identifies the syntax or analysis that produced this target.
+	Origin string
+	// CommandStartByte identifies the owning command within this decomposition.
+	CommandStartByte uint
+	Path             string
+	Resolvable       bool
+	Argv0            string
+	Cwd              string
+	ScopeID          int
+	Raw              string
 }
+
+// Write target origins distinguish independent syntax from command operands.
+const (
+	WriteOriginRedirect = "redirect"
+	WriteOriginArgument = "argument"
+	WriteOriginAnalysis = "analysis"
+)
 
 // Assignment is a shell variable assignment found while walking a shell syntax
 // tree. Name is set only for simple variable names, Value is the literal value
