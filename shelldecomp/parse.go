@@ -279,6 +279,7 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, 
 func (walk *walker) handleRedirect(node *tree_sitter.Node, command Command, currentScope *scope) {
 	kind := nodeKind(node.Kind())
 	if kind == kindFileRedirect {
+		walk.handleFileReadRedirect(node, command, currentScope)
 		walk.handleFileRedirect(node, command, currentScope)
 		return
 	}

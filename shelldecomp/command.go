@@ -41,13 +41,20 @@ type Command struct {
 // reading command (for example "grep" or "git grep"), Cwd is the directory the
 // path was resolved against, and Raw is the original token text.
 type ReadTarget struct {
-	Path       string
-	Resolvable bool
-	Argv0      string
-	Cwd        string
-	ScopeID    int
-	Raw        string
+	// Origin identifies an independent input redirection when present.
+	Origin string
+	// CommandStartByte identifies the owning command within this decomposition.
+	CommandStartByte uint
+	Path             string
+	Resolvable       bool
+	Argv0            string
+	Cwd              string
+	ScopeID          int
+	Raw              string
 }
+
+// ReadOriginRedirect identifies a file opened by shell input redirection.
+const ReadOriginRedirect = "redirect"
 
 // WriteTarget is a file a command writes. Path is an absolute path when
 // Resolvable is true, and Unresolvable or the raw token otherwise. Argv0 is the
