@@ -51,11 +51,12 @@ func (walk *walker) buildCommand(node *tree_sitter.Node, argv0 string, args []ra
 
 func containingPipeline(node *tree_sitter.Node) (uint, uint) {
 	for parent := node.Parent(); parent != nil; parent = parent.Parent() {
-		switch parent.Kind() {
-		case "pipeline":
+		switch nodeKind(parent.Kind()) {
+		case kindPipeline:
 			return parent.StartByte(), parent.EndByte()
-		case "subshell", "command_substitution", "process_substitution", "function_definition":
+		case kindSubshell, kindCommandSubstitution, kindProcessSubstitution, kindFunctionDefinition:
 			return 0, 0
+		default:
 		}
 	}
 	return 0, 0
