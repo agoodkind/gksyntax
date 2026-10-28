@@ -408,6 +408,9 @@ func parseForeign(
 			Depth:    depth,
 		}
 		result.reads, result.writes = analyzer(input)
+		for index := range result.writes {
+			result.writes[index].Origin = WriteOriginAnalysis
+		}
 	}
 	return result
 }

@@ -147,6 +147,9 @@ func (walk *walker) analyzeGrammarlessEmbedding(embedding Embedding, currentScop
 		Visited:  walk.visited,
 		Depth:    walk.depth - 1,
 	})
+	for index := range writes {
+		writes[index].Origin = WriteOriginAnalysis
+	}
 	return &Decomposition{
 		source:   []byte(embedding.Text),
 		lang:     embedding.Lang,
