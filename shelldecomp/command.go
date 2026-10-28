@@ -24,12 +24,16 @@ type Word struct {
 // command, Kind is its CommandKind, and Node points at the classified syntax
 // node the command came from.
 type Command struct {
-	Argv0   string
-	Args    []Word
-	Cwd     string
-	ScopeID int
-	Kind    string
-	Node    *Node
+	// PipelineStartByte and PipelineEndByte identify the containing pipeline.
+	// Both fields are zero when this command is outside a pipeline.
+	PipelineStartByte uint
+	PipelineEndByte   uint
+	Argv0             string
+	Args              []Word
+	Cwd               string
+	ScopeID           int
+	Kind              string
+	Node              *Node
 }
 
 // ReadTarget is a file a command reads. Path is an absolute path when
@@ -37,13 +41,20 @@ type Command struct {
 // reading command (for example "grep" or "git grep"), Cwd is the directory the
 // path was resolved against, and Raw is the original token text.
 type ReadTarget struct {
-	Path       string
-	Resolvable bool
-	Argv0      string
-	Cwd        string
-	ScopeID    int
-	Raw        string
+	// Origin identifies an independent input redirection when present.
+	Origin string
+	// CommandStartByte identifies the owning command within this decomposition.
+	CommandStartByte uint
+	Path             string
+	Resolvable       bool
+	Argv0            string
+	Cwd              string
+	ScopeID          int
+	Raw              string
 }
+
+// ReadOriginRedirect identifies a file opened by shell input redirection.
+const ReadOriginRedirect = "redirect"
 
 // WriteTarget is a file a command writes. Path is an absolute path when
 // Resolvable is true, and Unresolvable or the raw token otherwise. Argv0 is the

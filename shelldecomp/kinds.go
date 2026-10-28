@@ -12,6 +12,7 @@ const (
 	kindCompoundStatement   nodeKind = "compound_statement"
 	kindPipeline            nodeKind = "pipeline"
 	kindSubshell            nodeKind = "subshell"
+	kindFunctionDefinition  nodeKind = "function_definition"
 	kindRedirectedStatement nodeKind = "redirected_statement"
 	kindCommand             nodeKind = "command"
 	kindVariableAssignment  nodeKind = "variable_assignment"
