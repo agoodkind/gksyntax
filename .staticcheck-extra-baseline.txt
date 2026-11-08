@@ -1,4 +1,16 @@
-# staticcheck-extra: generated_at=2026-10-04T21:08:37Z
+# staticcheck-extra: generated_at=2026-11-08T23:15:11Z
+chunk/chunk.go:60:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+shelldecomp/analyze.go:46:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+shelldecomp/api.go:9:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+shelldecomp/dispatch.go:46:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+shelldecomp/node.go:29:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+shelldecomp/options.go:47:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+shelldecomp/parse.go:53:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+treesitter/grammars/awk/binding.go:18:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+treesitter/grammars/dart/binding.go:18:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+treesitter/grammars/perl/binding.go:20:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+treesitter/grammars/swift/binding.go:19:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
+treesitter/registry.go:174:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
 chunk/cast_test.go:1:9: This test file declares package chunk, the package under test. A test must enter through the exported API. Change the package clause to chunk_test and call only exported identifiers.	# staticcheck-extra:first_added=2026-10-04T21:08:37Z last_seen=2026-10-04T21:08:37Z
 chunk/chunk_test.go:33:6: Test TestHardSplitProducesValidUTF8ChunksAcrossEmoji calls the unexported function hardSplit of the package under test. A test must enter through the exported API or the built command. Call the exported entry point that uses hardSplit.	# staticcheck-extra:first_added=2026-10-04T21:08:37Z last_seen=2026-10-04T21:08:37Z
 chunk/chunk_test.go:53:6: Test TestAlignToRuneStart calls the unexported function alignToRuneStart of the package under test. A test must enter through the exported API or the built command. Call the exported entry point that uses alignToRuneStart.	# staticcheck-extra:first_added=2026-10-04T21:08:37Z last_seen=2026-10-04T21:08:37Z
