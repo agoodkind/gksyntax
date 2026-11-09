@@ -1,4 +1,4 @@
-# staticcheck-extra: generated_at=2026-11-09T09:25:27Z
+# staticcheck-extra: generated_at=2026-11-09T17:17:11Z
 shelldecomp/analyze.go:1:9: filenameprefix: analyze.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
 shelldecomp/analyze_applescript.go:1:9: filenameprefix: analyze_applescript.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
 shelldecomp/analyze_applescript_test.go:1:9: filenameprefix: analyze_applescript_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
