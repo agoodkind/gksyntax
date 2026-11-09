@@ -1,4 +1,38 @@
-# staticcheck-extra: generated_at=2026-11-08T23:15:11Z
+# staticcheck-extra: generated_at=2026-11-09T02:24:46Z
+shelldecomp/analyze.go:1:9: filenameprefix: analyze.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_applescript.go:1:9: filenameprefix: analyze_applescript.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_applescript_test.go:1:9: filenameprefix: analyze_applescript_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_awk.go:1:9: filenameprefix: analyze_awk.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_awk_test.go:1:9: filenameprefix: analyze_awk_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_javascript.go:1:9: filenameprefix: analyze_javascript.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_javascript_module_test.go:1:9: filenameprefix: analyze_javascript_module_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_javascript_test.go:1:9: filenameprefix: analyze_javascript_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_perl.go:1:9: filenameprefix: analyze_perl.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_perl_test.go:1:9: filenameprefix: analyze_perl_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_php.go:1:9: filenameprefix: analyze_php.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_php_test.go:1:9: filenameprefix: analyze_php_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_python.go:1:9: filenameprefix: analyze_python.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_python_dataflow.go:1:9: filenameprefix: analyze_python_dataflow.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_python_test.go:1:9: filenameprefix: analyze_python_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_ruby.go:1:9: filenameprefix: analyze_ruby.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_ruby_failclosed_test.go:1:9: filenameprefix: analyze_ruby_failclosed_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_ruby_test.go:1:9: filenameprefix: analyze_ruby_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_sed.go:1:9: filenameprefix: analyze_sed.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_sed_test.go:1:9: filenameprefix: analyze_sed_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_sql.go:1:9: filenameprefix: analyze_sql.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/analyze_sql_test.go:1:9: filenameprefix: analyze_sql_test.go repeats prefix "analyze"; use directory "analyze"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/command.go:1:9: filenameprefix: command.go repeats prefix "command"; use directory "command"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/command_build.go:1:9: filenameprefix: command_build.go repeats prefix "command"; use directory "command"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/dispatch.go:1:9: filenameprefix: dispatch.go repeats prefix "dispatch"; use directory "dispatch"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/dispatch_entries.go:1:9: filenameprefix: dispatch_entries.go repeats prefix "dispatch"; use directory "dispatch"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/dispatch_test.go:1:9: filenameprefix: dispatch_test.go repeats prefix "dispatch"; use directory "dispatch"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/program_perl.go:1:9: filenameprefix: program_perl.go repeats prefix "program"; use directory "program"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/program_perl_test.go:1:9: filenameprefix: program_perl_test.go repeats prefix "program"; use directory "program"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/program_python.go:1:9: filenameprefix: program_python.go repeats prefix "program"; use directory "program"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/read_redirect.go:1:9: filenameprefix: read_redirect.go repeats prefix "read"; use directory "read"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/readscan.go:1:9: filenameprefix: readscan.go repeats prefix "read"; use directory "read"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/readscan_exprflag_test.go:1:9: filenameprefix: readscan_exprflag_test.go repeats prefix "read"; use directory "read"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
+shelldecomp/readscan_twovalue_test.go:1:9: filenameprefix: readscan_twovalue_test.go repeats prefix "read"; use directory "read"	# staticcheck-extra:first_added=2026-11-09T02:24:36Z last_seen=2026-11-09T02:24:36Z
 chunk/chunk.go:60:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
 shelldecomp/analyze.go:46:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
 shelldecomp/api.go:9:1: doc_structure: add an introduction, explanation, and example or layout	# staticcheck-extra:first_added=2026-11-08T23:15:11Z last_seen=2026-11-08T23:15:11Z
