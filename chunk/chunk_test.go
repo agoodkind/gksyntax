@@ -22,9 +22,11 @@ func TestAddOverlapPreservesUTF8AcrossMultiByteBoundary(t *testing.T) {
 	if len(result) != 2 {
 		t.Fatalf("addOverlap returned %d chunks, want 2", len(result))
 	}
+
 	if !utf8.ValidString(result[1].Content) {
 		t.Fatalf("second chunk content is not valid UTF-8: %q", result[1].Content)
 	}
+
 	if !strings.HasSuffix(result[1].Content, "next chunk") {
 		t.Fatalf("second chunk lost its tail: %q", result[1].Content)
 	}
@@ -39,14 +41,20 @@ func TestHardSplitProducesValidUTF8ChunksAcrossEmoji(t *testing.T) {
 	if len(out) == 0 {
 		t.Fatal("hardSplit returned empty slice")
 	}
+
 	for index, piece := range out {
 		if !utf8.ValidString(piece) {
 			t.Fatalf("chunk %d is not valid UTF-8: %q", index, piece)
 		}
 	}
+
 	rejoined := strings.Join(out, "")
 	if rejoined != content {
-		t.Fatalf("hardSplit lost content; rejoined len=%d original len=%d", len(rejoined), len(content))
+		t.Fatalf(
+			"hardSplit lost content; rejoined len=%d original len=%d",
+			len(rejoined),
+			len(content),
+		)
 	}
 }
 
@@ -54,6 +62,7 @@ func TestAlignToRuneStart(t *testing.T) {
 	t.Parallel()
 
 	s := "a\U0001F600b" // a (1 byte), emoji (4 bytes), b (1 byte) = 6 bytes
+
 	cases := []struct {
 		name   string
 		offset int
@@ -78,6 +87,7 @@ func TestAlignDownToRuneStart(t *testing.T) {
 	t.Parallel()
 
 	s := "a\U0001F600b"
+
 	cases := []struct {
 		name   string
 		offset int

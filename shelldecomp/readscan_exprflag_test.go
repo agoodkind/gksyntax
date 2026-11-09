@@ -48,12 +48,15 @@ func TestJqExprFlagsAreToolSpecific(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
-			if !slices.Equal(got, testCase.want) {
-				t.Fatalf("read paths = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
+				if !slices.Equal(got, testCase.want) {
+					t.Fatalf("read paths = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }
 
@@ -88,11 +91,14 @@ func TestGrepExprFlagsStillSupplyThePattern(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
-			if !slices.Equal(got, testCase.want) {
-				t.Fatalf("read paths = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
+				if !slices.Equal(got, testCase.want) {
+					t.Fatalf("read paths = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }

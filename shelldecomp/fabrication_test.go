@@ -5,11 +5,13 @@ import "testing"
 // readPaths returns the resolvable read-target paths of a decomposition.
 func readPaths(decomposition *Decomposition) []string {
 	var paths []string
+
 	for _, target := range decomposition.ReadTargets() {
 		if target.Resolvable {
 			paths = append(paths, target.Path)
 		}
 	}
+
 	return paths
 }
 
@@ -18,13 +20,19 @@ func readPaths(decomposition *Decomposition) []string {
 // path.
 func hasNoFabricatedReadPath(t *testing.T, decomposition *Decomposition) {
 	t.Helper()
+
 	for _, target := range decomposition.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		for _, marker := range []string{"$", "{", "`", "(", "\t", "\n"} {
 			if containsRune(target.Path, marker) {
-				t.Errorf("read target path %q contains %q (fabricated from a non-path operand)", target.Path, marker)
+				t.Errorf(
+					"read target path %q contains %q (fabricated from a non-path operand)",
+					target.Path,
+					marker,
+				)
 			}
 		}
 	}
@@ -40,6 +48,7 @@ func indexOf(s, sub string) int {
 			return i
 		}
 	}
+
 	return -1
 }
 
@@ -87,9 +96,11 @@ func TestFullPathBinaryClassifiesByBasename(t *testing.T) {
 	if !found {
 		t.Fatal("expected /usr/bin/grep to classify as grep")
 	}
+
 	if command.Kind != CommandKindSearch {
 		t.Fatalf("kind = %q, want %q", command.Kind, CommandKindSearch)
 	}
+
 	if got := readPaths(decomposition); len(got) != 1 || got[0] != "/tmp/log" {
 		t.Fatalf("read paths = %v, want [/tmp/log]", got)
 	}

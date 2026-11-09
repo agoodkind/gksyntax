@@ -37,10 +37,13 @@ func (set *visitedSet) add(path string) bool {
 	if set == nil || path == "" {
 		return false
 	}
+
 	if _, found := set.seen[path]; found {
 		return false
 	}
+
 	set.seen[path] = struct{}{}
+
 	return true
 }
 
@@ -49,5 +52,12 @@ func (set *visitedSet) add(path string) bool {
 // script file off disk. It mirrors Parse but adds the resolver seam; a nil
 // resolver yields the same result Parse would. ParseWithOptions never panics.
 func ParseWithOptions(command string, baseCwd string, opts Options) *Decomposition {
-	return parseShellOpts([]byte(command), baseCwd, opts.Home, DefaultMaxDepth, opts.FileResolver, newVisitedSet())
+	return parseShellOpts(
+		[]byte(command),
+		baseCwd,
+		opts.Home,
+		DefaultMaxDepth,
+		opts.FileResolver,
+		newVisitedSet(),
+	)
 }

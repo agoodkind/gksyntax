@@ -35,15 +35,19 @@ func (walk *walker) pythonEmbeddings(command Command, currentScope *scope) ([]Em
 	if command.Argv0 != "python" && command.Argv0 != "python3" {
 		return nil, false
 	}
+
 	slot, found := walk.pythonProgramSlot(command, currentScope)
 	if !found {
 		return nil, true
 	}
+
 	argv := pythonArgv(command.Args, slot.argvStart)
 	if slot.hasInline {
 		return []Embedding{pythonEmbedding(slot.inlineCode, argv)}, true
 	}
+
 	body, _ := walk.readScript(slot.scriptPath)
+
 	return []Embedding{pythonEmbedding(string(body), argv)}, true
 }
 
@@ -52,25 +56,33 @@ func (walk *walker) pythonEmbeddings(command Command, currentScope *scope) ([]Em
 // operand as a script path. It reports false when no program can be pinned (a
 // bare REPL, an unresolvable program operand, or a -m module that does not
 // resolve to a local file).
-func (walk *walker) pythonProgramSlot(command Command, currentScope *scope) (pythonProgramSlot, bool) {
+func (walk *walker) pythonProgramSlot(
+	command Command,
+	currentScope *scope,
+) (pythonProgramSlot, bool) {
 	index := 0
 	for index < len(command.Args) {
 		arg := command.Args[index]
 		if !strings.HasPrefix(arg.Text, "-") || arg.Text == "-" {
 			break
 		}
+
 		if arg.Text == "-c" {
 			return walk.inlineSlot(command.Args, index)
 		}
+
 		if arg.Text == "-m" {
 			return walk.moduleSlot(command.Args, index, currentScope)
 		}
+
 		if pythonValueFlags[arg.Text] {
 			index += 2
 			continue
 		}
+
 		index++
 	}
+
 	return walk.scriptSlot(command.Args, index, currentScope)
 }
 
@@ -81,6 +93,7 @@ func (walk *walker) inlineSlot(args []Word, flagIndex int) (pythonProgramSlot, b
 	if valueIndex >= len(args) || !args[valueIndex].Resolvable {
 		return pythonProgramSlot{}, false
 	}
+
 	return pythonProgramSlot{
 		inlineCode: args[valueIndex].Value,
 		hasInline:  true,
@@ -93,22 +106,30 @@ func (walk *walker) inlineSlot(args []Word, flagIndex int) (pythonProgramSlot, b
 // the resolver can read; a non-local module (the stdlib, an installed package)
 // reads no project file and yields no slot, so the command is located without a
 // fabricated path.
-func (walk *walker) moduleSlot(args []Word, flagIndex int, currentScope *scope) (pythonProgramSlot, bool) {
+func (walk *walker) moduleSlot(
+	args []Word,
+	flagIndex int,
+	currentScope *scope,
+) (pythonProgramSlot, bool) {
 	valueIndex := flagIndex + 1
 	if valueIndex >= len(args) || !args[valueIndex].Resolvable {
 		return pythonProgramSlot{}, false
 	}
+
 	relative := strings.ReplaceAll(args[valueIndex].Value, ".", "/") + ".py"
 	resolved := currentScope.resolvePath(relative)
 	if resolved == Unresolvable || resolved == "" {
 		return pythonProgramSlot{}, false
 	}
+
 	if walk.resolver == nil {
 		return pythonProgramSlot{}, false
 	}
+
 	if _, ok := walk.resolver(resolved); !ok {
 		return pythonProgramSlot{}, false
 	}
+
 	return pythonProgramSlot{
 		scriptPath: resolved,
 		hasScript:  true,
@@ -119,14 +140,20 @@ func (walk *walker) moduleSlot(args []Word, flagIndex int, currentScope *scope) 
 // scriptSlot builds the program slot for python SCRIPT.py: the first bare
 // resolvable operand at or after start, resolved against the cwd. An absent or
 // unresolvable operand yields no slot rather than a fabricated path.
-func (walk *walker) scriptSlot(args []Word, start int, currentScope *scope) (pythonProgramSlot, bool) {
+func (walk *walker) scriptSlot(
+	args []Word,
+	start int,
+	currentScope *scope,
+) (pythonProgramSlot, bool) {
 	if start >= len(args) || !args[start].Resolvable {
 		return pythonProgramSlot{}, false
 	}
+
 	resolved := currentScope.resolvePath(args[start].Value)
 	if resolved == Unresolvable || resolved == "" {
 		return pythonProgramSlot{}, false
 	}
+
 	return pythonProgramSlot{
 		scriptPath: resolved,
 		hasScript:  true,
@@ -143,13 +170,16 @@ func (walk *walker) readScript(absPath string) ([]byte, bool) {
 	if !walk.visited.add(absPath) {
 		return nil, false
 	}
+
 	if walk.resolver == nil {
 		return nil, false
 	}
+
 	content, ok := walk.resolver(absPath)
 	if !ok {
 		return nil, false
 	}
+
 	return content, true
 }
 
@@ -163,11 +193,14 @@ func pythonArgv(args []Word, start int) []string {
 		if strings.HasPrefix(arg.Text, "-") {
 			continue
 		}
+
 		if !arg.Resolvable {
 			continue
 		}
+
 		argv = append(argv, arg.Value)
 	}
+
 	return argv
 }
 

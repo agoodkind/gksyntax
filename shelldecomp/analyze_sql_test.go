@@ -11,15 +11,18 @@ import (
 func sqlRegion(t *testing.T, decomposition *Decomposition) EmbeddedRegion {
 	t.Helper()
 	regions := decomposition.EmbeddedRegions()
+
 	sqlRegions := make([]EmbeddedRegion, 0, len(regions))
 	for _, region := range regions {
 		if region.Lang == LangSQL {
 			sqlRegions = append(sqlRegions, region)
 		}
 	}
+
 	if len(sqlRegions) != 1 {
 		t.Fatalf("sql regions = %d, want 1", len(sqlRegions))
 	}
+
 	return sqlRegions[0]
 }
 
@@ -31,14 +34,19 @@ func sqlRegionReads(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		t.Fatal("sql region should be parsed (analyzer is registered for LangSQL)")
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -50,14 +58,19 @@ func sqlRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		t.Fatal("sql region should be parsed (analyzer is registered for LangSQL)")
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.WriteTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -118,6 +131,7 @@ func TestSQLWritefileIsWriteNotRead(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for writefile", reads)
 	}
+
 	writes := sqlRegionWrites(t, decomposition)
 	want := []string{"/data/out.bin"}
 	if !equalStrings(writes, want) {
@@ -132,6 +146,7 @@ func TestSQLOutputWrite(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for .output", reads)
 	}
+
 	writes := sqlRegionWrites(t, decomposition)
 	want := []string{"/data/log.txt"}
 	if !equalStrings(writes, want) {
@@ -188,7 +203,10 @@ func TestSQLOutputFlagPrefixedDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := sqlRegionWrites(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("writes = %v, want none (a flag-prefixed .output is dropped, not misresolved)", got)
+		t.Fatalf(
+			"writes = %v, want none (a flag-prefixed .output is dropped, not misresolved)",
+			got,
+		)
 	}
 }
 
@@ -232,14 +250,20 @@ func TestSQLArgv0RecordedOnReadTarget(t *testing.T) {
 	if region.Parsed == nil {
 		t.Fatal("sql region should be parsed")
 	}
+
 	found := false
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if target.Resolvable && target.Path == "/data/blob.bin" && target.Argv0 == "sqlite3" {
 			found = true
 		}
 	}
+
 	if !found {
-		t.Fatalf("expected a sqlite3-labeled read of /data/blob.bin, got %+v", region.Parsed.ReadTargets())
+		t.Fatalf(
+			"expected a sqlite3-labeled read of /data/blob.bin, got %+v",
+			region.Parsed.ReadTargets(),
+		)
 	}
 }
 
@@ -254,13 +278,19 @@ func TestSQLArgv0RecordedOnReadTarget(t *testing.T) {
 // two-line split analyzeSQL itself performs.
 func TestSQLImportAndAttachTogether(t *testing.T) {
 	source := ".import /data/in.csv mytable\nATTACH DATABASE '/other/aux.db' AS aux;"
-	reads, _ := analyzeSQL(AnalyzerInput{Source: []byte(source), Cwd: "/repo", Home: "/home/u"})
+	reads, _ := analyzeSQL(AnalyzerInput{
+		Source: []byte(source),
+		Cwd:    "/repo",
+		Home:   "/home/u",
+	})
+
 	got := make([]string, 0, len(reads))
 	for _, target := range reads {
 		if target.Resolvable {
 			got = append(got, target.Path)
 		}
 	}
+
 	sort.Strings(got)
 	want := []string{"/data/in.csv", "/other/aux.db"}
 	if !equalStrings(got, want) {

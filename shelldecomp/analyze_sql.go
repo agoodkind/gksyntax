@@ -75,15 +75,19 @@ func init() {
 func analyzeSQL(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &sqlCollector{in: in, scope: scope{cwd: in.Cwd, homeDir: in.Home}}
 	var sqlLines []string
+
 	for line := range strings.SplitSeq(string(in.Source), "\n") {
 		trimmed := strings.TrimLeft(line, " \t")
 		if strings.HasPrefix(trimmed, ".") {
 			collector.scanDotCommand(trimmed)
 			continue
 		}
+
 		sqlLines = append(sqlLines, line)
 	}
+
 	collector.scanSQL(strings.Join(sqlLines, "\n"))
+
 	return collector.reads, collector.writes
 }
 
@@ -115,40 +119,55 @@ type sqlDotToken struct {
 func splitDotCommandArgs(line string) []sqlDotToken {
 	var tokens []sqlDotToken
 	pos := 0
+
 	length := len(line)
 	for pos < length {
 		for pos < length && (line[pos] == ' ' || line[pos] == '\t') {
 			pos++
 		}
+
 		if pos >= length {
 			break
 		}
+
 		if line[pos] == '\'' || line[pos] == '"' {
 			quote := line[pos]
 			start := pos
+
 			pos++
 			for pos < length && line[pos] != quote {
 				pos++
 			}
+
 			end := pos
 			if pos < length {
 				pos++
 			}
+
 			raw := line[start:pos]
-			tokens = append(tokens, sqlDotToken{
-				Raw:          raw,
-				Value:        line[start+1 : end],
-				HasBackslash: strings.ContainsRune(raw, '\\'),
-			})
+			tokens = append(
+				tokens,
+				sqlDotToken{
+					Raw:          raw,
+					Value:        line[start+1 : end],
+					HasBackslash: strings.ContainsRune(raw, '\\'),
+				},
+			)
 			continue
 		}
+
 		start := pos
 		for pos < length && line[pos] != ' ' && line[pos] != '\t' {
 			pos++
 		}
+
 		raw := line[start:pos]
-		tokens = append(tokens, sqlDotToken{Raw: raw, Value: raw, HasBackslash: strings.ContainsRune(raw, '\\')})
+		tokens = append(
+			tokens,
+			sqlDotToken{Raw: raw, Value: raw, HasBackslash: strings.ContainsRune(raw, '\\')},
+		)
 	}
+
 	return tokens
 }
 
@@ -171,9 +190,11 @@ func (collector *sqlCollector) scanDotCommand(line string) {
 	if len(tokens) < 2 {
 		return
 	}
+
 	if strings.HasPrefix(tokens[1].Value, "-") {
 		return
 	}
+
 	switch tokens[0].Value {
 	case sqlDotImport:
 		collector.addDotRead(tokens[1])
@@ -188,6 +209,7 @@ func (collector *sqlCollector) addDotRead(token sqlDotToken) {
 	if token.HasBackslash {
 		return
 	}
+
 	collector.addRead(token.Value, token.Raw)
 }
 
@@ -200,13 +222,16 @@ func (collector *sqlCollector) addDotOutputWrite(token sqlDotToken) {
 	if token.HasBackslash {
 		return
 	}
+
 	if token.Value == sqlOutputStdout {
 		return
 	}
+
 	if token.Value == sqlOutputOff {
 		collector.addWrite(sqlDevNullPath, token.Raw)
 		return
 	}
+
 	collector.addWrite(token.Value, token.Raw)
 }
 
@@ -239,6 +264,7 @@ type sqlToken struct {
 func tokenizeSQL(source string) []sqlToken {
 	var tokens []sqlToken
 	pos := 0
+
 	length := len(source)
 	for pos < length {
 		char := source[pos]
@@ -254,6 +280,7 @@ func tokenizeSQL(source string) []sqlToken {
 			for pos+1 < length && (source[pos] != '*' || source[pos+1] != '/') {
 				pos++
 			}
+
 			pos += 2
 			if pos > length {
 				pos = length
@@ -262,24 +289,30 @@ func tokenizeSQL(source string) []sqlToken {
 			start := pos
 			pos = scanSQLStringLiteral(source, pos)
 			raw := source[start:pos]
-			tokens = append(tokens, sqlToken{
-				Kind:         sqlTokenString,
-				Text:         raw,
-				Value:        sqlUnquoteLiteral(raw),
-				HasBackslash: strings.ContainsRune(raw, '\\'),
-			})
+			tokens = append(
+				tokens,
+				sqlToken{
+					Kind:         sqlTokenString,
+					Text:         raw,
+					Value:        sqlUnquoteLiteral(raw),
+					HasBackslash: strings.ContainsRune(raw, '\\'),
+				},
+			)
 		case isSQLIdentStart(char):
 			start := pos
+
 			pos++
 			for pos < length && isSQLIdentPart(source[pos]) {
 				pos++
 			}
+
 			tokens = append(tokens, sqlToken{Kind: sqlTokenIdent, Text: source[start:pos]})
 		default:
 			tokens = append(tokens, sqlToken{Kind: sqlTokenOther, Text: string(char)})
 			pos++
 		}
 	}
+
 	return tokens
 }
 
@@ -289,6 +322,7 @@ func tokenizeSQL(source string) []sqlToken {
 // the literal; an unterminated literal runs to the end of the source.
 func scanSQLStringLiteral(source string, pos int) int {
 	length := len(source)
+
 	pos++
 	for pos < length {
 		if source[pos] == '\'' {
@@ -296,10 +330,13 @@ func scanSQLStringLiteral(source string, pos int) int {
 				pos += 2
 				continue
 			}
+
 			return pos + 1
 		}
+
 		pos++
 	}
+
 	return pos
 }
 
@@ -323,7 +360,9 @@ func sqlUnquoteLiteral(raw string) string {
 	if len(raw) < 2 {
 		return ""
 	}
+
 	inner := raw[1 : len(raw)-1]
+
 	return strings.ReplaceAll(inner, "''", "'")
 }
 
@@ -335,6 +374,7 @@ func (collector *sqlCollector) scanSQL(source string) {
 		if token.Kind != sqlTokenIdent {
 			continue
 		}
+
 		switch {
 		case strings.EqualFold(token.Text, sqlAttachKeyword):
 			collector.scanAttach(tokens, index)
@@ -357,20 +397,26 @@ func (collector *sqlCollector) scanSQL(source string) {
 // guessed.
 func (collector *sqlCollector) scanAttach(tokens []sqlToken, index int) {
 	next := index + 1
-	if next < len(tokens) && tokens[next].Kind == sqlTokenIdent && strings.EqualFold(tokens[next].Text, sqlDatabaseKeyword) {
+	if next < len(tokens) && tokens[next].Kind == sqlTokenIdent &&
+		strings.EqualFold(tokens[next].Text, sqlDatabaseKeyword) {
 		next++
 	}
+
 	if next >= len(tokens) || tokens[next].Kind != sqlTokenString {
 		return
 	}
+
 	literal := tokens[next]
 	asIndex := next + 1
-	if asIndex >= len(tokens) || tokens[asIndex].Kind != sqlTokenIdent || !strings.EqualFold(tokens[asIndex].Text, sqlAsKeyword) {
+	if asIndex >= len(tokens) || tokens[asIndex].Kind != sqlTokenIdent ||
+		!strings.EqualFold(tokens[asIndex].Text, sqlAsKeyword) {
 		return
 	}
+
 	if literal.HasBackslash {
 		return
 	}
+
 	collector.addRead(literal.Value, literal.Text)
 }
 
@@ -381,19 +427,27 @@ func (collector *sqlCollector) scanAttach(tokens []sqlToken, index int) {
 // literal (a bind parameter, a column reference, or any other expression)
 // leaves the whole call unrecorded: a present but non-literal argument is
 // not the same as an absent one.
-func (collector *sqlCollector) scanFunctionCall(tokens []sqlToken, index int, record func(value string, raw string)) {
+func (collector *sqlCollector) scanFunctionCall(
+	tokens []sqlToken,
+	index int,
+	record func(value string, raw string),
+) {
 	openIndex := index + 1
-	if openIndex >= len(tokens) || tokens[openIndex].Kind != sqlTokenOther || tokens[openIndex].Text != "(" {
+	if openIndex >= len(tokens) || tokens[openIndex].Kind != sqlTokenOther ||
+		tokens[openIndex].Text != "(" {
 		return
 	}
+
 	argIndex := openIndex + 1
 	if argIndex >= len(tokens) || tokens[argIndex].Kind != sqlTokenString {
 		return
 	}
+
 	arg := tokens[argIndex]
 	if arg.HasBackslash {
 		return
 	}
+
 	record(arg.Value, arg.Text)
 }
 
@@ -406,13 +460,17 @@ func (collector *sqlCollector) addRead(value string, raw string) {
 	if !resolvable {
 		path = Unresolvable
 	}
-	collector.reads = append(collector.reads, ReadTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      sqlArgv0,
-		Cwd:        collector.in.Cwd,
-		Raw:        raw,
-	})
+
+	collector.reads = append(
+		collector.reads,
+		ReadTarget{
+			Path:       path,
+			Resolvable: resolvable,
+			Argv0:      sqlArgv0,
+			Cwd:        collector.in.Cwd,
+			Raw:        raw,
+		},
+	)
 }
 
 // addWrite resolves a path value against the cwd and records it as a write
@@ -424,11 +482,15 @@ func (collector *sqlCollector) addWrite(value string, raw string) {
 	if !resolvable {
 		path = Unresolvable
 	}
-	collector.writes = append(collector.writes, WriteTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      sqlArgv0,
-		Cwd:        collector.in.Cwd,
-		Raw:        raw,
-	})
+
+	collector.writes = append(
+		collector.writes,
+		WriteTarget{
+			Path:       path,
+			Resolvable: resolvable,
+			Argv0:      sqlArgv0,
+			Cwd:        collector.in.Cwd,
+			Raw:        raw,
+		},
+	)
 }

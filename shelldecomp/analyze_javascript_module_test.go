@@ -9,6 +9,7 @@ import (
 func jsRegionReadsFor(t *testing.T, command string) []string {
 	t.Helper()
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
+
 	return jsRegionReads(t, decomposition)
 }
 
@@ -59,12 +60,15 @@ func TestJavaScriptDestructuredBindingRespectsItsModule(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got := jsRegionReadsFor(t, `node -e '`+testCase.program+`'`)
-			if !equalStrings(got, testCase.want) {
-				t.Fatalf("reads = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				got := jsRegionReadsFor(t, `node -e '`+testCase.program+`'`)
+				if !equalStrings(got, testCase.want) {
+					t.Fatalf("reads = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }
 
@@ -88,11 +92,14 @@ func TestJavaScriptRenamedBindingRespectsItsModule(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got := jsRegionReadsFor(t, `node -e '`+testCase.program+`'`)
-			if !equalStrings(got, testCase.want) {
-				t.Fatalf("reads = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				got := jsRegionReadsFor(t, `node -e '`+testCase.program+`'`)
+				if !equalStrings(got, testCase.want) {
+					t.Fatalf("reads = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }

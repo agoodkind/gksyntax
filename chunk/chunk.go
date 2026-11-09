@@ -53,16 +53,31 @@ func NewDispatcher() *Dispatcher {
 }
 
 // SplitFile splits one file into chunks using AST or fallback behavior.
-func (dispatcher *Dispatcher) SplitFile(ctx context.Context, path string, content []byte) (Result, error) {
+func (dispatcher *Dispatcher) SplitFile(
+	ctx context.Context,
+	path string,
+	content []byte,
+) (Result, error) {
 	return dispatcher.SplitFileWithType(ctx, path, content, "")
 }
 
 // SplitFileWithType splits one file using the requested splitter type.
-func (dispatcher *Dispatcher) SplitFileWithType(ctx context.Context, path string, content []byte, splitterType string) (Result, error) {
+func (dispatcher *Dispatcher) SplitFileWithType(
+	ctx context.Context,
+	path string,
+	content []byte,
+	splitterType string,
+) (Result, error) {
 	language := treesitter.LanguageForPath(path)
 	if strings.EqualFold(strings.TrimSpace(splitterType), splitterTypeLangchain) {
 		return Result{
-			Chunks:   langchainSplit(string(content), language, path, dispatcher.fallbackChunkSize, dispatcher.fallbackOverlap),
+			Chunks: langchainSplit(
+				string(content),
+				language,
+				path,
+				dispatcher.fallbackChunkSize,
+				dispatcher.fallbackOverlap,
+			),
 			Strategy: splitterTypeLangchain,
 		}, nil
 	}
@@ -72,17 +87,45 @@ func (dispatcher *Dispatcher) SplitFileWithType(ctx context.Context, path string
 		return Result{Chunks: astChunks, Strategy: "ast"}, nil
 	}
 
-	slog.WarnContext(ctx, "fall back to recursive separator splitter", "path", path, "language", language, "err", err)
+	slog.WarnContext(
+		ctx,
+		"fall back to recursive separator splitter",
+		"path",
+		path,
+		"language",
+		language,
+		"err",
+		err,
+	)
+
 	return Result{
-		Chunks:   langchainSplit(string(content), language, path, dispatcher.fallbackChunkSize, dispatcher.fallbackOverlap),
+		Chunks: langchainSplit(
+			string(content),
+			language,
+			path,
+			dispatcher.fallbackChunkSize,
+			dispatcher.fallbackOverlap,
+		),
 		Strategy: "fallback",
 	}, nil
 }
 
-func (dispatcher *Dispatcher) tryAST(ctx context.Context, content []byte, language string, path string) ([]Chunk, error) {
+func (dispatcher *Dispatcher) tryAST(
+	ctx context.Context,
+	content []byte,
+	language string,
+	path string,
+) ([]Chunk, error) {
 	grammar, supported := treesitter.GrammarForLanguage(language)
 	if !supported {
-		slog.WarnContext(ctx, "language is unsupported by AST splitter", "path", path, "language", language)
+		slog.WarnContext(
+			ctx,
+			"language is unsupported by AST splitter",
+			"path",
+			path,
+			"language",
+			language,
+		)
 		return nil, fmt.Errorf("language %s not supported by AST splitter", language)
 	}
 
@@ -90,20 +133,48 @@ func (dispatcher *Dispatcher) tryAST(ctx context.Context, content []byte, langua
 	defer parser.Close()
 
 	if err := parser.SetLanguage(grammar); err != nil {
-		slog.ErrorContext(ctx, "set parser language failed", "path", path, "language", language, "err", err)
+		slog.ErrorContext(
+			ctx,
+			"set parser language failed",
+			"path",
+			path,
+			"language",
+			language,
+			"err",
+			err,
+		)
 		return nil, fmt.Errorf("set parser language for %s: %w", language, err)
 	}
 
 	tree := parser.Parse(content, nil)
 	if tree == nil {
-		slog.ErrorContext(ctx, "parse returned nil tree", "path", path, "language", language, "err", errors.New("nil tree"))
+		slog.ErrorContext(
+			ctx,
+			"parse returned nil tree",
+			"path",
+			path,
+			"language",
+			language,
+			"err",
+			errors.New("nil tree"),
+		)
 		return nil, fmt.Errorf("parse returned nil tree for %s", path)
 	}
+
 	defer tree.Close()
 
 	rootNode := tree.RootNode()
 	if rootNode == nil {
-		slog.ErrorContext(ctx, "parse produced no root node", "path", path, "language", language, "err", errors.New("nil root node"))
+		slog.ErrorContext(
+			ctx,
+			"parse produced no root node",
+			"path",
+			path,
+			"language",
+			language,
+			"err",
+			errors.New("nil root node"),
+		)
 		return nil, fmt.Errorf("parse produced no root node for %s", path)
 	}
 
@@ -111,6 +182,7 @@ func (dispatcher *Dispatcher) tryAST(ctx context.Context, content []byte, langua
 	if len(chunks) == 0 && strings.TrimSpace(string(content)) != "" {
 		chunks = langchainSplit(string(content), language, path, dispatcher.astChunkSize, 0)
 	}
+
 	return addOverlap(chunks, dispatcher.astChunkOverlap), nil
 }
 
@@ -120,19 +192,37 @@ func (dispatcher *Dispatcher) tryAST(ctx context.Context, content []byte, langua
 // merged back up to the budget, and a larger node with no children is split on
 // textual seams. The budget counts non-whitespace bytes so indentation and
 // blank lines do not fragment otherwise-coherent chunks.
-func (dispatcher *Dispatcher) chunkNode(node *tree_sitter.Node, content []byte, language string, path string, budget int) []Chunk {
+func (dispatcher *Dispatcher) chunkNode(
+	node *tree_sitter.Node,
+	content []byte,
+	language string,
+	path string,
+	budget int,
+) []Chunk {
 	if node == nil {
 		return nil
 	}
+
 	if nonWhitespaceByteCount(content, node.StartByte(), node.EndByte()) <= budget {
-		if chunk, ok := chunkFromBytes(content, node.StartByte(), node.EndByte(), node.StartPosition(), node.EndPosition(), language, path); ok {
+		if chunk, valid := chunkFromBytes(
+			content,
+			node.StartByte(),
+			node.EndByte(),
+			node.StartPosition(),
+			node.EndPosition(),
+			language,
+			path,
+		); valid {
 			return []Chunk{chunk}
 		}
+
 		return nil
 	}
+
 	if node.ChildCount() == 0 {
 		return dispatcher.splitOversizeSpan(node, content, language, path)
 	}
+
 	return dispatcher.mergeChildChunks(node, content, language, path, budget)
 }
 
@@ -141,7 +231,13 @@ func (dispatcher *Dispatcher) chunkNode(node *tree_sitter.Node, content []byte, 
 // its own by recursing into chunkNode. A merged group spans from its first
 // child's start byte to its last child's end byte, so comments and punctuation
 // between children stay inside the chunk.
-func (dispatcher *Dispatcher) mergeChildChunks(node *tree_sitter.Node, content []byte, language string, path string, budget int) []Chunk {
+func (dispatcher *Dispatcher) mergeChildChunks(
+	node *tree_sitter.Node,
+	content []byte,
+	language string,
+	path string,
+	budget int,
+) []Chunk {
 	chunks := make([]Chunk, 0)
 	var groupStartByte, groupEndByte uint
 	var groupStartPos, groupEndPos tree_sitter.Point
@@ -152,9 +248,19 @@ func (dispatcher *Dispatcher) mergeChildChunks(node *tree_sitter.Node, content [
 		if !haveGroup {
 			return
 		}
-		if chunk, ok := chunkFromBytes(content, groupStartByte, groupEndByte, groupStartPos, groupEndPos, language, path); ok {
+
+		if chunk, valid := chunkFromBytes(
+			content,
+			groupStartByte,
+			groupEndByte,
+			groupStartPos,
+			groupEndPos,
+			language,
+			path,
+		); valid {
 			chunks = append(chunks, chunk)
 		}
+
 		haveGroup = false
 		groupSize = 0
 	}
@@ -164,25 +270,31 @@ func (dispatcher *Dispatcher) mergeChildChunks(node *tree_sitter.Node, content [
 		if child == nil {
 			continue
 		}
+
 		childSize := nonWhitespaceByteCount(content, child.StartByte(), child.EndByte())
 		if childSize > budget {
 			flushGroup()
 			chunks = append(chunks, dispatcher.chunkNode(child, content, language, path, budget)...)
 			continue
 		}
+
 		if haveGroup && groupSize+childSize > budget {
 			flushGroup()
 		}
+
 		if !haveGroup {
 			groupStartByte = child.StartByte()
 			groupStartPos = child.StartPosition()
 			haveGroup = true
 		}
+
 		groupEndByte = child.EndByte()
 		groupEndPos = child.EndPosition()
 		groupSize += childSize
 	}
+
 	flushGroup()
+
 	return chunks
 }
 
@@ -191,32 +303,56 @@ func (dispatcher *Dispatcher) mergeChildChunks(node *tree_sitter.Node, content [
 // recursive separator splitter, whose byte-based hard split keeps any single
 // piece within the per-chunk byte cap the vector store enforces. Line numbers
 // are offset back to the node's position in the file.
-func (dispatcher *Dispatcher) splitOversizeSpan(node *tree_sitter.Node, content []byte, language string, path string) []Chunk {
+func (dispatcher *Dispatcher) splitOversizeSpan(
+	node *tree_sitter.Node,
+	content []byte,
+	language string,
+	path string,
+) []Chunk {
 	startByte := node.StartByte()
 	endByte := node.EndByte()
 	if startByte >= endByte || int(endByte) > len(content) {
 		return nil
 	}
+
 	baseLine := safeInt(node.StartPosition().Row)
-	pieces := langchainSplit(string(content[startByte:endByte]), language, path, dispatcher.astChunkSize, 0)
+
+	pieces := langchainSplit(
+		string(content[startByte:endByte]),
+		language,
+		path,
+		dispatcher.astChunkSize,
+		0,
+	)
 	for index := range pieces {
 		pieces[index].StartLine += baseLine
 		pieces[index].EndLine += baseLine
 	}
+
 	return pieces
 }
 
 // chunkFromBytes builds a chunk from a byte span, trimming surrounding
 // whitespace. It returns false when the span is empty or whitespace-only.
-func chunkFromBytes(content []byte, startByte uint, endByte uint, startPos tree_sitter.Point, endPos tree_sitter.Point, language string, path string) (Chunk, bool) {
+func chunkFromBytes(
+	content []byte,
+	startByte uint,
+	endByte uint,
+	startPos tree_sitter.Point,
+	endPos tree_sitter.Point,
+	language string,
+	path string,
+) (Chunk, bool) {
 	var zero Chunk
 	if startByte >= endByte || int(endByte) > len(content) {
 		return zero, false
 	}
+
 	text := strings.TrimSpace(string(content[startByte:endByte]))
 	if text == "" {
 		return zero, false
 	}
+
 	return Chunk{
 		Content:   text,
 		StartLine: safeInt(startPos.Row) + 1,
@@ -233,7 +369,9 @@ func nonWhitespaceByteCount(content []byte, start uint, end uint) int {
 	if start >= end || int(end) > len(content) {
 		return 0
 	}
+
 	count := 0
+
 	for index := start; index < end; index++ {
 		switch content[index] {
 		case ' ', '\t', '\n', '\r', '\f', '\v':
@@ -241,6 +379,7 @@ func nonWhitespaceByteCount(content []byte, start uint, end uint) int {
 			count++
 		}
 	}
+
 	return count
 }
 
@@ -248,7 +387,9 @@ func addOverlap(chunks []Chunk, overlap int) []Chunk {
 	if len(chunks) <= 1 || overlap <= 0 {
 		return chunks
 	}
+
 	result := make([]Chunk, 0, len(chunks))
+
 	result = append(result, chunks[0])
 	for index := 1; index < len(chunks); index++ {
 		chunk := chunks[index]
@@ -258,10 +399,12 @@ func addOverlap(chunks []Chunk, overlap int) []Chunk {
 			cut := alignToRuneStart(overlapText, len(overlapText)-overlap)
 			overlapText = overlapText[cut:]
 		}
+
 		chunk.Content = overlapText + "\n" + chunk.Content
 		chunk.StartLine = max(1, chunk.StartLine-lineCount(overlapText))
 		result = append(result, chunk)
 	}
+
 	return result
 }
 
@@ -273,12 +416,15 @@ func alignToRuneStart(s string, offset int) int {
 	if offset <= 0 {
 		return 0
 	}
+
 	if offset >= len(s) {
 		return len(s)
 	}
+
 	for offset < len(s) && !utf8.RuneStart(s[offset]) {
 		offset++
 	}
+
 	return offset
 }
 
@@ -289,12 +435,15 @@ func alignDownToRuneStart(s string, offset int) int {
 	if offset <= 0 {
 		return 0
 	}
+
 	if offset >= len(s) {
 		return len(s)
 	}
+
 	for offset > 0 && !utf8.RuneStart(s[offset]) {
 		offset--
 	}
+
 	return offset
 }
 
@@ -302,6 +451,7 @@ func lineCount(text string) int {
 	if text == "" {
 		return 0
 	}
+
 	return len(strings.Split(text, "\n"))
 }
 
@@ -309,5 +459,6 @@ func safeInt(value uint) int {
 	if value > math.MaxInt {
 		return math.MaxInt
 	}
+
 	return int(value)
 }

@@ -11,15 +11,18 @@ import (
 func applescriptRegion(t *testing.T, decomposition *Decomposition) EmbeddedRegion {
 	t.Helper()
 	regions := decomposition.EmbeddedRegions()
+
 	appleScriptRegions := make([]EmbeddedRegion, 0, len(regions))
 	for _, region := range regions {
 		if region.Lang == LangAppleScript {
 			appleScriptRegions = append(appleScriptRegions, region)
 		}
 	}
+
 	if len(appleScriptRegions) != 1 {
 		t.Fatalf("applescript regions = %d, want 1", len(appleScriptRegions))
 	}
+
 	return appleScriptRegions[0]
 }
 
@@ -31,14 +34,19 @@ func applescriptRegionReads(t *testing.T, decomposition *Decomposition) []string
 	if region.Parsed == nil {
 		t.Fatal("applescript region should be parsed (analyzer is registered for LangAppleScript)")
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -50,14 +58,19 @@ func applescriptRegionWrites(t *testing.T, decomposition *Decomposition) []strin
 	if region.Parsed == nil {
 		t.Fatal("applescript region should be parsed (analyzer is registered for LangAppleScript)")
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.WriteTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -110,6 +123,7 @@ func TestAppleScriptWriteToFileIsWriteNotRead(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for write ... to file", reads)
 	}
+
 	writes := applescriptRegionWrites(t, decomposition)
 	want := []string{"/data/out.txt"}
 	if !equalStrings(writes, want) {
@@ -126,6 +140,7 @@ func TestAppleScriptWriteToPOSIXFileIsWrite(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for write ... to POSIX file", reads)
 	}
+
 	writes := applescriptRegionWrites(t, decomposition)
 	want := []string{"/data/out2.txt"}
 	if !equalStrings(writes, want) {
@@ -201,14 +216,20 @@ func TestAppleScriptArgv0RecordedOnReadTarget(t *testing.T) {
 	if region.Parsed == nil {
 		t.Fatal("applescript region should be parsed")
 	}
+
 	found := false
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if target.Resolvable && target.Path == "/etc/hosts" && target.Argv0 == "osascript" {
 			found = true
 		}
 	}
+
 	if !found {
-		t.Fatalf("expected an osascript-labeled read of /etc/hosts, got %+v", region.Parsed.ReadTargets())
+		t.Fatalf(
+			"expected an osascript-labeled read of /etc/hosts, got %+v",
+			region.Parsed.ReadTargets(),
+		)
 	}
 }
 
@@ -217,13 +238,19 @@ func TestAppleScriptArgv0RecordedOnReadTarget(t *testing.T) {
 // text must not be recorded as a real read.
 func TestAppleScriptBlockCommentSkipsFalseMatch(t *testing.T) {
 	source := "(* read POSIX file \"/etc/hosts\" *)\nread file \"/data/real.txt\""
-	reads, _ := analyzeAppleScript(AnalyzerInput{Source: []byte(source), Cwd: "/repo", Home: "/home/u"})
+	reads, _ := analyzeAppleScript(AnalyzerInput{
+		Source: []byte(source),
+		Cwd:    "/repo",
+		Home:   "/home/u",
+	})
+
 	got := make([]string, 0, len(reads))
 	for _, target := range reads {
 		if target.Resolvable {
 			got = append(got, target.Path)
 		}
 	}
+
 	sort.Strings(got)
 	want := []string{"/data/real.txt"}
 	if !equalStrings(got, want) {

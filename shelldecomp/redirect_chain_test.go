@@ -20,9 +20,11 @@ func TestRedirectOnChainKeepsCdEffect(t *testing.T) {
 		if !found {
 			t.Fatalf("%q: expected a git command, got %+v", command, decomposition.Commands())
 		}
+
 		if git.Cwd != "/repo/wt" {
 			t.Fatalf("%q: git cwd = %q, want /repo/wt", command, git.Cwd)
 		}
+
 		if got := decomposition.EffectiveCwdAt(uint(len(command))); got != "/repo/wt" {
 			t.Fatalf("%q: EffectiveCwdAt(end) = %q, want /repo/wt", command, got)
 		}
@@ -36,11 +38,13 @@ func TestRedirectOnChainRecordsWriteTarget(t *testing.T) {
 	decomposition := Parse("cd /repo/wt && git diff > out.txt", "/base", "/home/u")
 	writes := decomposition.WriteTargets()
 	found := false
+
 	for _, write := range writes {
 		if write.Path == "/repo/wt/out.txt" && write.Argv0 == "git" && write.Cwd == "/repo/wt" {
 			found = true
 		}
 	}
+
 	if !found {
 		t.Fatalf("expected git write target /repo/wt/out.txt in cwd /repo/wt, got %+v", writes)
 	}
@@ -53,15 +57,24 @@ func TestRedirectOnChainRecordsWriteTarget(t *testing.T) {
 func TestRedirectOnGroupKeepsOuterCwd(t *testing.T) {
 	decomposition := Parse("{ cd /tmp; echo hi; } > out.txt", "/base", "/home/u")
 	found := false
+
 	for _, write := range decomposition.WriteTargets() {
 		if write.Path == "/tmp/out.txt" {
-			t.Fatalf("group redirect wrongly resolved to /tmp/out.txt: %+v", decomposition.WriteTargets())
+			t.Fatalf(
+				"group redirect wrongly resolved to /tmp/out.txt: %+v",
+				decomposition.WriteTargets(),
+			)
 		}
+
 		if write.Path == "/base/out.txt" {
 			found = true
 		}
 	}
+
 	if !found {
-		t.Fatalf("expected group redirect write target /base/out.txt, got %+v", decomposition.WriteTargets())
+		t.Fatalf(
+			"expected group redirect write target /base/out.txt, got %+v",
+			decomposition.WriteTargets(),
+		)
 	}
 }

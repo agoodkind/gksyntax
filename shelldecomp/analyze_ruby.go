@@ -48,6 +48,7 @@ var rubyAlwaysReadMethods = map[string]map[string]bool{
 func analyzeRuby(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &rubyCollector{in: in, scope: scope{cwd: in.Cwd, homeDir: in.Home}}
 	collector.walk(in.Root)
+
 	return collector.reads, collector.writes
 }
 
@@ -69,12 +70,15 @@ func (collector *rubyCollector) walk(node *tree_sitter.Node) {
 	if node == nil {
 		return
 	}
+
 	if node.Kind() == "call" {
 		collector.classifyCall(node)
 	}
+
 	if node.Kind() == "element_reference" {
 		collector.classifyElementReference(node)
 	}
+
 	for index := range node.ChildCount() {
 		collector.walk(node.Child(index))
 	}
@@ -89,10 +93,12 @@ func (collector *rubyCollector) classifyCall(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	methodNode := node.ChildByFieldName("method")
 	if methodNode == nil {
 		return
 	}
+
 	method := methodNode.Utf8Text(collector.in.Source)
 	arguments := node.ChildByFieldName("arguments")
 
@@ -114,9 +120,11 @@ func (collector *rubyCollector) classifyCall(node *tree_sitter.Node) {
 // object field.
 func (collector *rubyCollector) classifyElementReference(node *tree_sitter.Node) {
 	object := node.ChildByFieldName("object")
-	if object == nil || object.Kind() != "constant" || object.Utf8Text(collector.in.Source) != "Dir" {
+	if object == nil || object.Kind() != "constant" ||
+		object.Utf8Text(collector.in.Source) != "Dir" {
 		return
 	}
+
 	collector.addGlobRead(node.NamedChild(1))
 }
 
@@ -135,14 +143,17 @@ func (collector *rubyCollector) classifyFileOpen(arguments *tree_sitter.Node) {
 		collector.addRead(pathNode)
 		return
 	}
+
 	mode, ok := rubyStringLiteralValue(modeNode, collector.in.Source)
 	if !ok {
 		return
 	}
+
 	if rubyIsWriteMode(mode) {
 		collector.addWrite(pathNode)
 		return
 	}
+
 	collector.addRead(pathNode)
 }
 
@@ -155,6 +166,7 @@ func (collector *rubyCollector) receiverConstantName(node *tree_sitter.Node) (st
 	if receiver == nil || receiver.Kind() != "constant" {
 		return "", false
 	}
+
 	return receiver.Utf8Text(collector.in.Source), true
 }
 
@@ -166,6 +178,7 @@ func (collector *rubyCollector) addRead(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	resolved := collector.scope.resolvePath(value)
 	collector.reads = append(collector.reads, collector.readTarget(resolved, node))
 }
@@ -177,6 +190,7 @@ func (collector *rubyCollector) addWrite(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	resolved := collector.scope.resolvePath(value)
 	collector.writes = append(collector.writes, collector.writeTarget(resolved, node))
 }
@@ -192,6 +206,7 @@ func (collector *rubyCollector) addGlobRead(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	dir := rubyGlobPrefixDir(value)
 	resolved := collector.scope.resolvePath(dir)
 	collector.reads = append(collector.reads, collector.readTarget(resolved, node))
@@ -206,6 +221,7 @@ func (collector *rubyCollector) readTarget(resolved string, node *tree_sitter.No
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return ReadTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -223,6 +239,7 @@ func (collector *rubyCollector) writeTarget(resolved string, node *tree_sitter.N
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return WriteTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -242,17 +259,22 @@ func rubyPositionalArg(arguments *tree_sitter.Node, n int) *tree_sitter.Node {
 	if arguments == nil {
 		return nil
 	}
+
 	count := 0
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() == "pair" {
 			continue
 		}
+
 		if count == n {
 			return child
 		}
+
 		count++
 	}
+
 	return nil
 }
 
@@ -277,24 +299,30 @@ func rubyStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 	if node == nil || node.Kind() != "string" {
 		return "", false
 	}
+
 	if strings.ContainsRune(node.Utf8Text(source), '\\') {
 		return "", false
 	}
+
 	var content strings.Builder
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		// The quote tokens are anonymous, unlike python's named string_start and
 		// string_end, so they are skipped by namedness rather than by kind.
 		if !child.IsNamed() {
 			continue
 		}
+
 		if child.Kind() == "string_content" {
 			content.WriteString(child.Utf8Text(source))
 			continue
 		}
+
 		// Any other named child, interpolation today and whatever a later
 		// grammar adds, means the value is not the literal source text.
 		// Refusing rather than skipping keeps a grammar change costing a
@@ -303,6 +331,7 @@ func rubyStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 		// stringLiteralValue in analyze_python.go.
 		return "", false
 	}
+
 	return content.String(), true
 }
 
@@ -310,7 +339,8 @@ func rubyStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 // the brief's rule is a mode beginning w or a, narrower than a language whose
 // modes are also matched by a trailing +.
 func rubyIsWriteMode(mode string) bool {
-	return strings.HasPrefix(mode, rubyWriteModePrefixWrite) || strings.HasPrefix(mode, rubyWriteModePrefixAppend)
+	return strings.HasPrefix(mode, rubyWriteModePrefixWrite) ||
+		strings.HasPrefix(mode, rubyWriteModePrefixAppend)
 }
 
 // rubyGlobPrefixDir returns the directory a glob pattern searches: the
@@ -325,6 +355,7 @@ func rubyGlobPrefixDir(pattern string) string {
 	if wildcard := strings.IndexAny(pattern, "*?[{"); wildcard >= 0 {
 		prefix = pattern[:wildcard]
 	}
+
 	dir := "."
 	if slash := strings.LastIndex(prefix, "/"); slash >= 0 {
 		dir = prefix[:slash]
@@ -332,5 +363,6 @@ func rubyGlobPrefixDir(pattern string) string {
 			dir = "/"
 		}
 	}
+
 	return dir
 }

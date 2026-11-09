@@ -47,12 +47,19 @@ func TestRubyPlainStringsStillResolve(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			decomposition := ParseWithOptions(testCase.command, "/repo", Options{Home: "/home/u"})
-			got := rubyRegionReads(t, decomposition)
-			if !equalStrings(got, testCase.want) {
-				t.Fatalf("reads = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				decomposition := ParseWithOptions(
+					testCase.command,
+					"/repo",
+					Options{Home: "/home/u"},
+				)
+				got := rubyRegionReads(t, decomposition)
+				if !equalStrings(got, testCase.want) {
+					t.Fatalf("reads = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }

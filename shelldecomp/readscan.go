@@ -68,14 +68,17 @@ func newReadScan(argv0 string, args []rawArg) *readScan {
 	if valueFlags == nil {
 		valueFlags = map[string]bool{}
 	}
+
 	exprFlags := exprFlagsByArgv0[argv0]
 	exprPrefixes := exprFlagPrefixesByArgv0[argv0]
 	hasExprFlag := false
+
 	for _, arg := range args {
 		if exprFlags[arg.text] {
 			hasExprFlag = true
 			continue
 		}
+
 		for _, prefix := range exprPrefixes {
 			if strings.HasPrefix(arg.text, prefix) {
 				hasExprFlag = true
@@ -83,14 +86,17 @@ func newReadScan(argv0 string, args []rawArg) *readScan {
 			}
 		}
 	}
+
 	twoValueFlags := twoValueFlagsByArgv0[argv0]
 	if twoValueFlags == nil {
 		twoValueFlags = map[string]bool{}
 	}
+
 	fileValuedFlags := fileValuedFlagsByArgv0[argv0]
 	if fileValuedFlags == nil {
 		fileValuedFlags = map[string]bool{}
 	}
+
 	return &readScan{
 		argv0:           argv0,
 		args:            args,
@@ -106,8 +112,10 @@ func newReadScan(argv0 string, args []rawArg) *readScan {
 // binds a name to a value, and --slurpfile and --rawfile bind a name to a file.
 var twoValueFlagsByArgv0 = map[string]map[string]bool{
 	"jq": {
-		"--arg": true, "--argjson": true,
-		"--slurpfile": true, "--rawfile": true,
+		"--arg":       true,
+		"--argjson":   true,
+		"--slurpfile": true,
+		"--rawfile":   true,
 	},
 }
 
@@ -157,6 +165,7 @@ func (scan *readScan) usesPattern() bool {
 func (scan *readScan) run() ([]rawArg, bool) {
 	paths := make([]rawArg, 0)
 	sawRecursive := false
+
 	index := 0
 	for index < len(scan.args) {
 		arg := scan.args[index]
@@ -165,20 +174,25 @@ func (scan *readScan) run() ([]rawArg, bool) {
 			if outcome.recursive {
 				sawRecursive = true
 			}
+
 			if outcome.dataPath != nil {
 				paths = append(paths, *outcome.dataPath)
 			}
+
 			index += outcome.advance
 			continue
 		}
+
 		if scan.usesPattern() && !scan.patternTaken {
 			scan.patternTaken = true
 			index++
 			continue
 		}
+
 		paths = append(paths, arg)
 		index++
 	}
+
 	return paths, sawRecursive
 }
 
@@ -212,8 +226,10 @@ func (scan *readScan) handleFlag(index int) flagOutcome {
 			if scan.fileValuedFlags[arg.text] {
 				outcome.dataPath = &scan.args[index+2]
 			}
+
 			return outcome
 		}
+
 		// A truncated invocation names no complete pair, so nothing after it can
 		// be classified; consume what is left rather than guessing.
 		return flagOutcome{recursive: recursive, advance: len(scan.args) - index, dataPath: nil}
@@ -223,8 +239,10 @@ func (scan *readScan) handleFlag(index int) flagOutcome {
 		if index+1 < len(scan.args) {
 			return flagOutcome{recursive: recursive, advance: 2, dataPath: nil}
 		}
+
 		return flagOutcome{recursive: recursive, advance: 1, dataPath: nil}
 	}
+
 	return flagOutcome{recursive: recursive, advance: 1, dataPath: nil}
 }
 
@@ -234,8 +252,10 @@ func isRecursiveFlag(token string) bool {
 	if token == "--recursive" || token == "-R" {
 		return true
 	}
+
 	if strings.HasPrefix(token, "-") && !strings.HasPrefix(token, "--") {
 		return strings.ContainsRune(token, 'r')
 	}
+
 	return false
 }

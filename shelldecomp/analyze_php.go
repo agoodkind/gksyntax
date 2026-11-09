@@ -83,6 +83,7 @@ var phpAlwaysReadFunctions = map[string]bool{
 func analyzePHP(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &phpCollector{in: in, scope: scope{cwd: in.Cwd, homeDir: in.Home}}
 	collector.walk(in.Root)
+
 	return collector.reads, collector.writes
 }
 
@@ -103,9 +104,11 @@ func (collector *phpCollector) walk(node *tree_sitter.Node) {
 	if node == nil {
 		return
 	}
+
 	if node.Kind() == phpKindFunctionCall {
 		collector.classifyCall(node)
 	}
+
 	for index := range node.ChildCount() {
 		collector.walk(node.Child(index))
 	}
@@ -123,6 +126,7 @@ func (collector *phpCollector) classifyCall(node *tree_sitter.Node) {
 	if functionNode == nil || functionNode.Kind() != phpKindName {
 		return
 	}
+
 	name := functionNode.Utf8Text(collector.in.Source)
 	arguments := node.ChildByFieldName("arguments")
 	if phpCallHasNamedArgument(arguments) {
@@ -156,15 +160,18 @@ func (collector *phpCollector) classifyFopen(arguments *tree_sitter.Node) {
 	if modeArgument == nil {
 		return
 	}
+
 	modeNode := phpArgumentValue(modeArgument)
 	mode, ok := phpStringLiteralValue(modeNode, collector.in.Source)
 	if !ok {
 		return
 	}
+
 	if phpIsWriteMode(mode) {
 		collector.addWrite(pathNode)
 		return
 	}
+
 	collector.addRead(pathNode)
 }
 
@@ -176,6 +183,7 @@ func (collector *phpCollector) addRead(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	resolved := collector.scope.resolvePath(value)
 	collector.reads = append(collector.reads, collector.readTarget(resolved, node))
 }
@@ -187,6 +195,7 @@ func (collector *phpCollector) addWrite(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	resolved := collector.scope.resolvePath(value)
 	collector.writes = append(collector.writes, collector.writeTarget(resolved, node))
 }
@@ -202,6 +211,7 @@ func (collector *phpCollector) addGlobRead(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	dir := phpGlobPrefixDir(value)
 	resolved := collector.scope.resolvePath(dir)
 	collector.reads = append(collector.reads, collector.readTarget(resolved, node))
@@ -216,6 +226,7 @@ func (collector *phpCollector) readTarget(resolved string, node *tree_sitter.Nod
 	if !resolvable {
 		targetPath = Unresolvable
 	}
+
 	return ReadTarget{
 		Path:       targetPath,
 		Resolvable: resolvable,
@@ -233,6 +244,7 @@ func (collector *phpCollector) writeTarget(resolved string, node *tree_sitter.No
 	if !resolvable {
 		targetPath = Unresolvable
 	}
+
 	return WriteTarget{
 		Path:       targetPath,
 		Resolvable: resolvable,
@@ -262,15 +274,18 @@ func phpCallHasNamedArgument(arguments *tree_sitter.Node) bool {
 	if arguments == nil || arguments.Kind() != phpKindArguments {
 		return false
 	}
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() != phpKindArgument {
 			continue
 		}
+
 		if child.ChildByFieldName("name") != nil {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -283,17 +298,22 @@ func phpPositionalArg(arguments *tree_sitter.Node, n int) *tree_sitter.Node {
 	if arguments == nil || arguments.Kind() != phpKindArguments {
 		return nil
 	}
+
 	count := 0
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() != phpKindArgument {
 			continue
 		}
+
 		if count == n {
 			return child
 		}
+
 		count++
 	}
+
 	return nil
 }
 
@@ -307,10 +327,12 @@ func phpArgumentValue(argument *tree_sitter.Node) *tree_sitter.Node {
 	if argument == nil {
 		return nil
 	}
+
 	count := argument.NamedChildCount()
 	if count == 0 {
 		return nil
 	}
+
 	return argument.NamedChild(count - 1)
 }
 
@@ -335,24 +357,31 @@ func phpStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool)
 	if node == nil {
 		return "", false
 	}
+
 	kind := node.Kind()
 	if kind != phpKindString && kind != phpKindEncapsedString {
 		return "", false
 	}
+
 	if strings.ContainsRune(node.Utf8Text(source), '\\') {
 		return "", false
 	}
+
 	var content strings.Builder
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil || !child.IsNamed() {
 			continue
 		}
+
 		if child.Kind() != phpKindStringContent {
 			return "", false
 		}
+
 		content.WriteString(child.Utf8Text(source))
 	}
+
 	return content.String(), true
 }
 
@@ -361,7 +390,8 @@ func phpStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool)
 // narrower "begins w or a" rule in analyze_ruby.go rather than modeling
 // every php fopen mode combination (r+, w+, x, c, ...).
 func phpIsWriteMode(mode string) bool {
-	return strings.HasPrefix(mode, phpWriteModePrefixWrite) || strings.HasPrefix(mode, phpWriteModePrefixAppend)
+	return strings.HasPrefix(mode, phpWriteModePrefixWrite) ||
+		strings.HasPrefix(mode, phpWriteModePrefixAppend)
 }
 
 // phpGlobPrefixDir returns the directory a glob pattern searches: the
@@ -377,6 +407,7 @@ func phpGlobPrefixDir(pattern string) string {
 	if wildcard := strings.IndexAny(pattern, phpGlobWildcards); wildcard >= 0 {
 		prefix = pattern[:wildcard]
 	}
+
 	dir := "."
 	if slash := strings.LastIndex(prefix, "/"); slash >= 0 {
 		dir = prefix[:slash]
@@ -384,5 +415,6 @@ func phpGlobPrefixDir(pattern string) string {
 			dir = "/"
 		}
 	}
+
 	return dir
 }

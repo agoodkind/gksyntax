@@ -65,7 +65,14 @@ func Parse(command string, baseCwd string, homeDir string) *Decomposition {
 // without descending further. resolver, when non-nil, lets an interpreter
 // script be read off disk; visited stops a self-referential script from
 // looping. Both are threaded onto the walker so nested parses keep the seam.
-func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, resolver FileResolver, visited *visitedSet) *Decomposition {
+func parseShellOpts(
+	source []byte,
+	baseCwd string,
+	homeDir string,
+	depth int,
+	resolver FileResolver,
+	visited *visitedSet,
+) *Decomposition {
 	result := &Decomposition{
 		source:   source,
 		lang:     LangShell,
@@ -80,6 +87,7 @@ func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, re
 	if depth <= 0 {
 		return opaqueDecomposition(source, LangShell)
 	}
+
 	if len(strings.TrimSpace(string(source))) == 0 {
 		return opaqueDecomposition(source, LangShell)
 	}
@@ -88,15 +96,18 @@ func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, re
 	if !ok {
 		return opaqueDecomposition(source, LangShell)
 	}
+
 	parser := tree_sitter.NewParser()
 	defer parser.Close()
 	if err := parser.SetLanguage(grammar); err != nil {
 		return opaqueDecomposition(source, LangShell)
 	}
+
 	tree := parser.Parse(source, nil)
 	if tree == nil {
 		return opaqueDecomposition(source, LangShell)
 	}
+
 	defer tree.Close()
 
 	root := tree.RootNode()
@@ -116,6 +127,7 @@ func parseShellOpts(source []byte, baseCwd string, homeDir string, depth int, re
 		nextScopeID: 1,
 	}
 	walk.walkSequence(root, &currentScope)
+
 	return result
 }
 
@@ -143,6 +155,7 @@ func (decomposition *Decomposition) recordCwd(startByte uint, cwd string) {
 	if count > 0 && decomposition.cwdSpans[count-1].cwd == cwd {
 		return
 	}
+
 	decomposition.cwdSpans = append(decomposition.cwdSpans, cwdSpan{startByte: startByte, cwd: cwd})
 }
 
@@ -156,6 +169,7 @@ func (walk *walker) walkSequence(node *tree_sitter.Node, currentScope *scope) {
 		if child == nil {
 			continue
 		}
+
 		walk.walkNode(child, currentScope, true)
 	}
 }
@@ -169,23 +183,29 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 		walk.walkPipeline(node, currentScope)
 		return
 	}
+
 	if kind == kindSubshell {
 		childScope := currentScope.child(walk.allocateScopeID())
 		walk.walkSequence(node, &childScope)
+
 		return
 	}
+
 	if kind == kindRedirectedStatement {
 		walk.walkRedirected(node, currentScope, firstStage)
 		return
 	}
+
 	if kind == kindCommand {
 		walk.walkCommand(node, currentScope, firstStage)
 		return
 	}
+
 	if kind == kindVariableAssignment {
 		walk.walkAssignment(node, currentScope)
 		return
 	}
+
 	walk.walkSequence(node, currentScope)
 }
 
@@ -193,6 +213,7 @@ func (walk *walker) walkNode(node *tree_sitter.Node, currentScope *scope, firstS
 func (walk *walker) allocateScopeID() int {
 	id := walk.nextScopeID
 	walk.nextScopeID++
+
 	return id
 }
 
@@ -201,11 +222,13 @@ func (walk *walker) allocateScopeID() int {
 // recognized as having no path target.
 func (walk *walker) walkPipeline(node *tree_sitter.Node, currentScope *scope) {
 	stageIndex := 0
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil || !child.IsNamed() {
 			continue
 		}
+
 		firstStage := stageIndex == 0
 		walk.walkNode(child, currentScope, firstStage)
 		stageIndex++
@@ -256,6 +279,7 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, 
 			currentScope.applyCd(command.Args)
 			walk.result.recordCwd(body.StartByte(), currentScope.cwd)
 		}
+
 		walk.collectReadTargets(command, args, currentScope, firstStage)
 		walk.collectInlineWrites(command, args, currentScope)
 		walk.dispatchEmbedded(body, command, args, currentScope)
@@ -266,9 +290,11 @@ func (walk *walker) walkRedirected(node *tree_sitter.Node, currentScope *scope, 
 		if child == nil {
 			continue
 		}
+
 		if node.FieldNameForChild(uint32(index)) != "redirect" {
 			continue
 		}
+
 		walk.handleRedirect(child, command, currentScope)
 	}
 }
@@ -281,8 +307,10 @@ func (walk *walker) handleRedirect(node *tree_sitter.Node, command Command, curr
 	if kind == kindFileRedirect {
 		walk.handleFileReadRedirect(node, command, currentScope)
 		walk.handleFileRedirect(node, command, currentScope)
+
 		return
 	}
+
 	if kind == kindHeredocRedirect {
 		walk.handleHeredoc(node, command, currentScope)
 		// A trailing output redirect (cat <<EOF >> log) parses as a file_redirect
@@ -292,6 +320,7 @@ func (walk *walker) handleRedirect(node *tree_sitter.Node, command Command, curr
 			if child == nil {
 				continue
 			}
+
 			if nodeKind(child.Kind()) == kindFileRedirect {
 				walk.handleFileRedirect(child, command, currentScope)
 			}
@@ -308,6 +337,7 @@ func (walk *walker) handleHeredoc(node *tree_sitter.Node, command Command, curre
 	if body == nil {
 		return
 	}
+
 	lang := heredocLang(command.Argv0)
 	embedding := Embedding{
 		StartByte: body.StartByte(),
@@ -341,6 +371,7 @@ func heredocLang(argv0 string) Lang {
 	if !found {
 		return LangOpaque
 	}
+
 	return lang
 }
 
@@ -351,9 +382,11 @@ func childByKind(node *tree_sitter.Node, kind string) *tree_sitter.Node {
 		if child == nil {
 			continue
 		}
+
 		if child.Kind() == kind {
 			return child
 		}
 	}
+
 	return nil
 }

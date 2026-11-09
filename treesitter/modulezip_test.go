@@ -26,6 +26,7 @@ const gitlinkMode = "160000"
 // submodule, from a build-time generator, or from a file that git ignores.
 func TestModuleZipContentsBuild(t *testing.T) {
 	moduleRoot := moduleRootDir(t)
+
 	zipTree := t.TempDir()
 	for _, trackedPath := range moduleZipPaths(t, moduleRoot) {
 		copyTrackedFile(t, moduleRoot, zipTree, trackedPath)
@@ -51,15 +52,18 @@ func moduleRootDir(t *testing.T) string {
 	if err != nil {
 		t.Fatalf("read working directory: %v", err)
 	}
+
 	for {
 		_, statErr := os.Stat(filepath.Join(directory, "go.mod"))
 		if statErr == nil {
 			return directory
 		}
+
 		parent := filepath.Dir(directory)
 		if parent == directory {
 			t.Fatalf("no go.mod at or above the test working directory")
 		}
+
 		directory = parent
 	}
 }
@@ -73,27 +77,37 @@ func moduleZipPaths(t *testing.T, moduleRoot string) []string {
 	probe := exec.Command("git", "-C", moduleRoot, "rev-parse", "--is-inside-work-tree")
 	probeOutput, probeErr := probe.CombinedOutput()
 	if probeErr != nil {
-		t.Skipf("%s is not a git work tree (%v: %s)", moduleRoot, probeErr, bytes.TrimSpace(probeOutput))
+		t.Skipf(
+			"%s is not a git work tree (%v: %s)",
+			moduleRoot,
+			probeErr,
+			bytes.TrimSpace(probeOutput),
+		)
 	}
 
 	listing, err := exec.Command("git", "-C", moduleRoot, "ls-files", "--stage", "-z").Output()
 	if err != nil {
 		t.Fatalf("git ls-files --stage: %v", err)
 	}
+
 	records := strings.Split(strings.TrimSuffix(string(listing), "\x00"), "\x00")
 	trackedPaths := make([]string, 0, len(records))
 	nestedModuleDirs := make([]string, 0)
+
 	for _, record := range records {
 		metadata, trackedPath, found := strings.Cut(record, "\t")
 		if !found {
 			t.Fatalf("git ls-files --stage record %q has no tab", record)
 		}
+
 		if strings.HasPrefix(metadata, gitlinkMode+" ") {
 			continue
 		}
+
 		if trackedPath != "go.mod" && path.Base(trackedPath) == "go.mod" {
 			nestedModuleDirs = append(nestedModuleDirs, path.Dir(trackedPath)+"/")
 		}
+
 		trackedPaths = append(trackedPaths, trackedPath)
 	}
 
@@ -102,8 +116,10 @@ func moduleZipPaths(t *testing.T, moduleRoot string) []string {
 		if insideNestedModule(trackedPath, nestedModuleDirs) || insideVendorDirectory(trackedPath) {
 			continue
 		}
+
 		zipPaths = append(zipPaths, trackedPath)
 	}
+
 	return zipPaths
 }
 
@@ -115,6 +131,7 @@ func insideNestedModule(trackedPath string, nestedModuleDirs []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -137,20 +154,25 @@ func copyTrackedFile(t *testing.T, moduleRoot string, zipTree string, trackedPat
 	if errors.Is(err, fs.ErrNotExist) {
 		return
 	}
+
 	if err != nil {
 		t.Fatalf("stat %s: %v", source, err)
 	}
+
 	if !info.Mode().IsRegular() {
 		return
 	}
+
 	content, err := os.ReadFile(source)
 	if err != nil {
 		t.Fatalf("read %s: %v", source, err)
 	}
+
 	destination := filepath.Join(zipTree, filepath.FromSlash(trackedPath))
 	if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {
 		t.Fatalf("create %s: %v", filepath.Dir(destination), err)
 	}
+
 	if err := os.WriteFile(destination, content, info.Mode().Perm()); err != nil {
 		t.Fatalf("write %s: %v", destination, err)
 	}

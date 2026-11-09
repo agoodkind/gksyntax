@@ -93,6 +93,7 @@ func dispatchNodeDashE(cmd Command, source []byte) []Embedding {
 	if embedding != nil {
 		return embedding
 	}
+
 	return flagValueEmbedding(cmd, "-p", LangJavaScript)
 }
 
@@ -121,87 +122,109 @@ func dispatchOsascriptDashE(cmd Command, source []byte) []Embedding {
 // region is parsed (Parsed != nil), not opaque.
 func dispatchSqlite3(cmd Command, source []byte) []Embedding {
 	_ = source
+
 	positionals := make([]Word, 0, len(cmd.Args))
 	for index := range cmd.Args {
 		if strings.HasPrefix(cmd.Args[index].Text, "-") {
 			continue
 		}
+
 		positionals = append(positionals, cmd.Args[index])
 	}
+
 	if len(positionals) < 2 {
 		return nil
 	}
+
 	sql := positionals[1]
 	if !sql.Resolvable {
 		return nil
 	}
-	return []Embedding{{
-		StartByte: 0,
-		EndByte:   0,
-		Text:      sql.Value,
-		Lang:      LangSQL,
-		NewScope:  true,
-		AsCommand: false,
-	}}
+
+	return []Embedding{
+		{
+			StartByte: 0,
+			EndByte:   0,
+			Text:      sql.Value,
+			Lang:      LangSQL,
+			NewScope:  true,
+			AsCommand: false,
+		},
+	}
 }
 
 // dispatchAwk extracts the awk program (the first bare operand, unless it is
 // supplied with -f) as an Awk embedding, which has no grammar and stays opaque.
 func dispatchAwk(cmd Command, source []byte) []Embedding {
 	_ = source
+
 	index := 0
 	for index < len(cmd.Args) {
 		arg := cmd.Args[index]
 		if !strings.HasPrefix(arg.Text, "-") {
 			break
 		}
+
 		if arg.Text == "-i" && index+1 < len(cmd.Args) && cmd.Args[index+1].Text == "inplace" {
 			index += 2
 			continue
 		}
+
 		if arg.Text == "-f" {
 			return nil
 		}
+
 		index++
 	}
+
 	if index >= len(cmd.Args) {
 		return nil
 	}
+
 	program := cmd.Args[index]
 	if !program.Resolvable {
 		return nil
 	}
-	return []Embedding{{
-		StartByte: 0,
-		EndByte:   0,
-		Text:      program.Value,
-		Lang:      LangAwk,
-		NewScope:  true,
-		AsCommand: false,
-	}}
+
+	return []Embedding{
+		{
+			StartByte: 0,
+			EndByte:   0,
+			Text:      program.Value,
+			Lang:      LangAwk,
+			NewScope:  true,
+			AsCommand: false,
+		},
+	}
 }
 
 // dispatchJQ extracts the jq filter (the first bare operand) as a JQ embedding,
 // which has no grammar and stays opaque.
 func dispatchJQ(cmd Command, source []byte) []Embedding {
 	_ = source
+
 	for index := range cmd.Args {
 		arg := cmd.Args[index]
 		if strings.HasPrefix(arg.Text, "-") {
 			continue
 		}
+
 		if !arg.Resolvable {
 			return nil
 		}
-		return []Embedding{{
-			StartByte: 0,
-			EndByte:   0,
-			Text:      arg.Value,
-			Lang:      LangJQ,
-			NewScope:  true,
-			AsCommand: false,
-		}}
+
+		return []Embedding{
+			{
+				StartByte: 0,
+				EndByte:   0,
+				Text:      arg.Value,
+				Lang:      LangJQ,
+				NewScope:  true,
+				AsCommand: false,
+			},
+		}
 	}
+
 	return nil
 }
 
@@ -209,32 +232,40 @@ func dispatchJQ(cmd Command, source []byte) []Embedding {
 // with -e/-f) as a Sed embedding, which has no grammar and stays opaque.
 func dispatchSed(cmd Command, source []byte) []Embedding {
 	_ = source
+
 	index := 0
 	for index < len(cmd.Args) {
 		arg := cmd.Args[index]
 		if !strings.HasPrefix(arg.Text, "-") {
 			break
 		}
+
 		if arg.Text == "-e" || arg.Text == "-f" {
 			return nil
 		}
+
 		index++
 	}
+
 	if index >= len(cmd.Args) {
 		return nil
 	}
+
 	program := cmd.Args[index]
 	if !program.Resolvable {
 		return nil
 	}
-	return []Embedding{{
-		StartByte: 0,
-		EndByte:   0,
-		Text:      program.Value,
-		Lang:      LangSed,
-		NewScope:  true,
-		AsCommand: false,
-	}}
+
+	return []Embedding{
+		{
+			StartByte: 0,
+			EndByte:   0,
+			Text:      program.Value,
+			Lang:      LangSed,
+			NewScope:  true,
+			AsCommand: false,
+		},
+	}
 }
 
 // dispatchFindExec extracts the command run by find -exec or -execdir as a
@@ -243,40 +274,51 @@ func dispatchSed(cmd Command, source []byte) []Embedding {
 func dispatchFindExec(cmd Command, source []byte) []Embedding {
 	_ = source
 	start := -1
+
 	for index := range cmd.Args {
 		if cmd.Args[index].Text == "-exec" || cmd.Args[index].Text == "-execdir" {
 			start = index + 1
 			break
 		}
 	}
+
 	if start < 0 {
 		return nil
 	}
+
 	parts := make([]string, 0)
+
 	for index := start; index < len(cmd.Args); index++ {
 		token := cmd.Args[index].Text
 		if token == ";" || token == "\\;" || token == "+" {
 			break
 		}
+
 		if token == "{}" {
 			continue
 		}
+
 		if !cmd.Args[index].Resolvable {
 			return nil
 		}
+
 		parts = append(parts, cmd.Args[index].Value)
 	}
+
 	if len(parts) == 0 {
 		return nil
 	}
-	return []Embedding{{
-		StartByte: 0,
-		EndByte:   0,
-		Text:      strings.Join(parts, " "),
-		Lang:      LangShell,
-		NewScope:  false,
-		AsCommand: true,
-	}}
+
+	return []Embedding{
+		{
+			StartByte: 0,
+			EndByte:   0,
+			Text:      strings.Join(parts, " "),
+			Lang:      LangShell,
+			NewScope:  false,
+			AsCommand: true,
+		},
+	}
 }
 
 // dispatchDocker extracts the command run inside a container by docker run or
@@ -288,36 +330,46 @@ func dispatchDocker(cmd Command, source []byte) []Embedding {
 	if len(cmd.Args) == 0 || !cmd.Args[0].Resolvable {
 		return nil
 	}
+
 	subcommand := cmd.Args[0].Value
 	if subcommand != "run" && subcommand != "exec" {
 		return nil
 	}
+
 	index := skipDockerFlags(cmd.Args, 1)
 	if index >= len(cmd.Args) {
 		return nil
 	}
+
 	commandStart := index + 1
 	if commandStart >= len(cmd.Args) {
 		return nil
 	}
+
 	parts := make([]string, 0)
+
 	for argIndex := commandStart; argIndex < len(cmd.Args); argIndex++ {
 		if !cmd.Args[argIndex].Resolvable {
 			return nil
 		}
+
 		parts = append(parts, cmd.Args[argIndex].Value)
 	}
+
 	if len(parts) == 0 {
 		return nil
 	}
-	return []Embedding{{
-		StartByte: 0,
-		EndByte:   0,
-		Text:      strings.Join(parts, " "),
-		Lang:      LangShell,
-		NewScope:  true,
-		AsCommand: true,
-	}}
+
+	return []Embedding{
+		{
+			StartByte: 0,
+			EndByte:   0,
+			Text:      strings.Join(parts, " "),
+			Lang:      LangShell,
+			NewScope:  true,
+			AsCommand: true,
+		},
+	}
 }
 
 // skipDockerFlags returns the index of the image or container operand of a
@@ -329,20 +381,31 @@ func skipDockerFlags(args []Word, start int) int {
 		if !strings.HasPrefix(token, "-") {
 			return index
 		}
+
 		if dockerValueFlag(token) && index+1 < len(args) {
 			index += 2
 			continue
 		}
+
 		index++
 	}
+
 	return index
 }
 
 // dockerValueFlags are the docker run and exec flags that take a separate value
 // operand, so the image or container operand follows the flag's value.
 var dockerValueFlags = map[string]bool{
-	"-e": true, "-v": true, "-w": true, "-u": true, "-p": true,
-	"--env": true, "--volume": true, "--workdir": true, "--user": true, "--name": true,
+	"-e":        true,
+	"-v":        true,
+	"-w":        true,
+	"-u":        true,
+	"-p":        true,
+	"--env":     true,
+	"--volume":  true,
+	"--workdir": true,
+	"--user":    true,
+	"--name":    true,
 }
 
 // dockerValueFlag reports whether a docker flag takes a separate value operand,
@@ -372,19 +435,23 @@ func parseForeign(
 	if depth <= 0 {
 		return opaqueDecomposition(source, lang)
 	}
+
 	grammar, ok := treesitter.GrammarForLanguage(grammarName)
 	if !ok {
 		return opaqueDecomposition(source, lang)
 	}
+
 	parser := tree_sitter.NewParser()
 	defer parser.Close()
 	if err := parser.SetLanguage(grammar); err != nil {
 		return opaqueDecomposition(source, lang)
 	}
+
 	tree := parser.Parse(source, nil)
 	if tree == nil {
 		return opaqueDecomposition(source, lang)
 	}
+
 	defer tree.Close()
 	result := &Decomposition{
 		source:   source,
@@ -407,10 +474,12 @@ func parseForeign(
 			Visited:  visited,
 			Depth:    depth,
 		}
+
 		result.reads, result.writes = analyzer(input)
 		for index := range result.writes {
 			result.writes[index].Origin = WriteOriginAnalysis
 		}
 	}
+
 	return result
 }

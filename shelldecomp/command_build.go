@@ -27,11 +27,17 @@ func (walk *walker) walkCommand(node *tree_sitter.Node, currentScope *scope, fir
 
 // buildCommand assembles a Command from the extracted argv0 and raw operands,
 // classifying each operand into a Word and recording the command in the result.
-func (walk *walker) buildCommand(node *tree_sitter.Node, argv0 string, args []rawArg, currentScope *scope) Command {
+func (walk *walker) buildCommand(
+	node *tree_sitter.Node,
+	argv0 string,
+	args []rawArg,
+	currentScope *scope,
+) Command {
 	words := make([]Word, 0, len(args))
 	for _, arg := range args {
 		words = append(words, classifyWord(arg))
 	}
+
 	classified := classifyArgv0(argv0)
 	commandNode := nodeFromTreeSitter(node, walk.source, LangShell)
 	pipelineStart, pipelineEnd := containingPipeline(node)
@@ -46,6 +52,7 @@ func (walk *walker) buildCommand(node *tree_sitter.Node, argv0 string, args []ra
 		Node:              commandNode,
 	}
 	walk.result.commands = append(walk.result.commands, command)
+
 	return command
 }
 
@@ -55,10 +62,14 @@ func containingPipeline(node *tree_sitter.Node) (uint, uint) {
 		if kind == kindPipeline {
 			return parent.StartByte(), parent.EndByte()
 		}
-		if kind == kindSubshell || kind == kindCommandSubstitution || kind == kindProcessSubstitution || kind == kindFunctionDefinition {
+
+		if kind == kindSubshell || kind == kindCommandSubstitution ||
+			kind == kindProcessSubstitution ||
+			kind == kindFunctionDefinition {
 			return 0, 0
 		}
 	}
+
 	return 0, 0
 }
 
@@ -74,6 +85,7 @@ func classifyWord(arg rawArg) Word {
 			Kind:       WordKindUnresolvable,
 		}
 	}
+
 	if strings.HasPrefix(arg.text, "-") {
 		return Word{
 			Text:       arg.text,
@@ -82,6 +94,7 @@ func classifyWord(arg rawArg) Word {
 			Kind:       WordKindFlag,
 		}
 	}
+
 	return Word{
 		Text:       arg.text,
 		Resolvable: true,
@@ -111,14 +124,30 @@ func nodeFromTreeSitter(node *tree_sitter.Node, source []byte, lang Lang) *Node 
 // its value with = (--include=*.go) is one token and needs no entry here.
 var valueFlagsByArgv0 = map[string]map[string]bool{
 	"grep": {
-		"-e": true, "-f": true, "-m": true, "-A": true, "-B": true,
-		"-C": true, "-d": true, "--include": true, "--exclude": true,
-		"--exclude-dir": true, "--color": true,
+		"-e":            true,
+		"-f":            true,
+		"-m":            true,
+		"-A":            true,
+		"-B":            true,
+		"-C":            true,
+		"-d":            true,
+		"--include":     true,
+		"--exclude":     true,
+		"--exclude-dir": true,
+		"--color":       true,
 	},
 	"egrep": {"-e": true, "-f": true, "-m": true},
 	"rg": {
-		"-e": true, "-f": true, "-m": true, "-A": true, "-B": true,
-		"-C": true, "-g": true, "--glob": true, "-t": true, "--type": true,
+		"-e":          true,
+		"-f":          true,
+		"-m":          true,
+		"-A":          true,
+		"-B":          true,
+		"-C":          true,
+		"-g":          true,
+		"--glob":      true,
+		"-t":          true,
+		"--type":      true,
 		"--max-count": true,
 	},
 	"ag": {"-G": true, "--file-search-regex": true},
@@ -131,7 +160,14 @@ var valueFlagsByArgv0 = map[string]map[string]bool{
 	"gawk": {"-F": true, "-v": true, "-f": true, "-i": true},
 	// jq's flags carry the program or named arguments, not data paths; stat's
 	// -f format and -t format string are not paths.
-	"jq":   {"-f": true, "--from-file": true, "--arg": true, "--argjson": true, "--slurpfile": true, "--rawfile": true},
+	"jq": {
+		"-f":          true,
+		"--from-file": true,
+		"--arg":       true,
+		"--argjson":   true,
+		"--slurpfile": true,
+		"--rawfile":   true,
+	},
 	"stat": {"-f": true, "-t": true},
 }
 
@@ -141,10 +177,16 @@ var valueFlagsByArgv0 = map[string]map[string]bool{
 // each remaining path operand against the command cwd. A recursive searcher or
 // a bare rg/ag with no path operand defaults to the cwd; a searcher that is a
 // non-first pipeline stage with no path operand reads stdin and has no target.
-func (walk *walker) collectReadTargets(command Command, args []rawArg, currentScope *scope, firstStage bool) {
+func (walk *walker) collectReadTargets(
+	command Command,
+	args []rawArg,
+	currentScope *scope,
+	firstStage bool,
+) {
 	if !readsFiles(command) {
 		return
 	}
+
 	argv0, sawGitGrep := readArgv0(command, args)
 	if command.Argv0 == "git" && !sawGitGrep {
 		return
@@ -154,6 +196,7 @@ func (walk *walker) collectReadTargets(command Command, args []rawArg, currentSc
 	if sawGitGrep {
 		scanArgs = args[1:]
 	}
+
 	scan := newReadScan(argv0, scanArgs)
 	pathTokens, sawRecursive := scan.run()
 
@@ -161,6 +204,7 @@ func (walk *walker) collectReadTargets(command Command, args []rawArg, currentSc
 		walk.defaultReadTarget(argv0, currentScope, sawRecursive, firstStage)
 		return
 	}
+
 	for _, token := range pathTokens {
 		walk.result.reads = append(walk.result.reads, resolveReadTarget(argv0, token, currentScope))
 	}
@@ -185,9 +229,11 @@ func readArgv0(command Command, args []rawArg) (string, bool) {
 	if command.Argv0 != "git" {
 		return command.Argv0, false
 	}
+
 	if len(args) > 0 && args[0].resolvable && args[0].value == "grep" {
 		return "git grep", true
 	}
+
 	return command.Argv0, false
 }
 
@@ -196,12 +242,18 @@ func readArgv0(command Command, args []rawArg) (string, bool) {
 // searcher with no path operand reads stdin and records nothing, whether it is
 // a first or later pipeline stage. firstStage is accepted for symmetry with the
 // caller and reserved for shapes that read the cwd only as a first stage.
-func (walk *walker) defaultReadTarget(argv0 string, currentScope *scope, sawRecursive bool, firstStage bool) {
+func (walk *walker) defaultReadTarget(
+	argv0 string,
+	currentScope *scope,
+	sawRecursive bool,
+	firstStage bool,
+) {
 	_ = firstStage
 	defaultsToCwd := sawRecursive || isBareSearcher(argv0)
 	if !defaultsToCwd {
 		return
 	}
+
 	walk.result.reads = append(walk.result.reads, cwdReadTarget(argv0, currentScope))
 }
 
@@ -229,6 +281,7 @@ func cwdReadTarget(argv0 string, currentScope *scope) ReadTarget {
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return ReadTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -253,6 +306,7 @@ func resolveReadTarget(argv0 string, token rawArg, currentScope *scope) ReadTarg
 			Raw:        token.text,
 		}
 	}
+
 	resolved := currentScope.resolvePath(token.value)
 	if resolved == Unresolvable {
 		return ReadTarget{
@@ -264,6 +318,7 @@ func resolveReadTarget(argv0 string, token rawArg, currentScope *scope) ReadTarg
 			Raw:        token.text,
 		}
 	}
+
 	return ReadTarget{
 		Path:       resolved,
 		Resolvable: true,

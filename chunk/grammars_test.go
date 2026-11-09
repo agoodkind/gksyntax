@@ -26,23 +26,40 @@ func TestModuleGrammarsParseThroughAST(t *testing.T) {
 		{"kotlin", "Greet.kt", "fun greet(): String { return \"hi\" }\n"},
 		{"objective-c", "Greeter.m", "@interface Greeter : NSObject\n- (void)greet;\n@end\n"},
 		{"dart", "main.dart", "class Greeter {\n  String greet() => \"hi\";\n}\n"},
-		{"swift", "Greeter.swift", "struct Greeter {\n    func greet() -> String { return \"hi\" }\n}\n"},
+		{
+			"swift",
+			"Greeter.swift",
+			"struct Greeter {\n    func greet() -> String { return \"hi\" }\n}\n",
+		},
 	}
 
 	for _, testCase := range cases {
-		t.Run(testCase.language, func(t *testing.T) {
-			t.Parallel()
-			dispatcher := NewDispatcher()
-			result, err := dispatcher.SplitFile(context.Background(), testCase.path, []byte(testCase.source))
-			if err != nil {
-				t.Fatalf("SplitFile(%s) returned error: %v", testCase.path, err)
-			}
-			if result.Strategy != "ast" {
-				t.Fatalf("strategy for %s = %q, want ast (grammar did not load)", testCase.language, result.Strategy)
-			}
-			if len(result.Chunks) == 0 {
-				t.Fatalf("expected at least one chunk for %s", testCase.language)
-			}
-		})
+		t.Run(
+			testCase.language,
+			func(t *testing.T) {
+				t.Parallel()
+				dispatcher := NewDispatcher()
+				result, err := dispatcher.SplitFile(
+					context.Background(),
+					testCase.path,
+					[]byte(testCase.source),
+				)
+				if err != nil {
+					t.Fatalf("SplitFile(%s) returned error: %v", testCase.path, err)
+				}
+
+				if result.Strategy != "ast" {
+					t.Fatalf(
+						"strategy for %s = %q, want ast (grammar did not load)",
+						testCase.language,
+						result.Strategy,
+					)
+				}
+
+				if len(result.Chunks) == 0 {
+					t.Fatalf("expected at least one chunk for %s", testCase.language)
+				}
+			},
+		)
 	}
 }
