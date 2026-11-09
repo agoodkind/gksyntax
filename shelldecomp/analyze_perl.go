@@ -31,6 +31,7 @@ func init() {
 func analyzePerl(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &perlCollector{in: in, reads: nil, writes: nil}
 	collector.walk(in.Root)
+
 	return collector.reads, collector.writes
 }
 
@@ -49,10 +50,12 @@ func (collector *perlCollector) walk(node *tree_sitter.Node) {
 	if node == nil {
 		return
 	}
+
 	kind := node.Kind()
 	if kind == "function_call_expression" || kind == "ambiguous_function_call_expression" {
 		collector.classifyCall(node)
 	}
+
 	for index := range node.ChildCount() {
 		collector.walk(node.Child(index))
 	}
@@ -66,18 +69,22 @@ func (collector *perlCollector) classifyCall(node *tree_sitter.Node) {
 	if function == nil || function.Utf8Text(collector.in.Source) != "open" {
 		return
 	}
+
 	arguments := node.ChildByFieldName("arguments")
 	if arguments == nil {
 		return
 	}
+
 	operands := perlListOperands(arguments)
 	if len(operands) < 2 {
 		return
 	}
+
 	if len(operands) >= 3 {
 		collector.classifyThreeArg(operands[1], operands[2])
 		return
 	}
+
 	collector.classifyTwoArg(operands[1])
 }
 
@@ -85,18 +92,24 @@ func (collector *perlCollector) classifyCall(node *tree_sitter.Node) {
 // a dup mode ("<&", ">&") names a descriptor and is skipped, a write mode opens
 // a write target, and any other mode opens a read target. EXPR must be a plain
 // string literal to resolve, otherwise it is dropped.
-func (collector *perlCollector) classifyThreeArg(modeNode *tree_sitter.Node, pathNode *tree_sitter.Node) {
+func (collector *perlCollector) classifyThreeArg(
+	modeNode *tree_sitter.Node,
+	pathNode *tree_sitter.Node,
+) {
 	mode, ok := perlStringLiteralValue(modeNode, collector.in.Source)
 	if !ok {
 		return
 	}
+
 	if isPerlDupMode(mode) {
 		return
 	}
+
 	value, ok := perlStringLiteralValue(pathNode, collector.in.Source)
 	if !ok {
 		return
 	}
+
 	collector.record(value, pathNode, isPerlWriteMode(mode))
 }
 
@@ -109,13 +122,16 @@ func (collector *perlCollector) classifyTwoArg(pathNode *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	mode, rest := splitPerlTwoArgMode(value)
 	if isPerlDupMode(mode) {
 		return
 	}
+
 	if rest == "" {
 		return
 	}
+
 	collector.record(rest, pathNode, isPerlWriteMode(mode))
 }
 
@@ -130,24 +146,33 @@ func (collector *perlCollector) record(value string, node *tree_sitter.Node, isW
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	raw := node.Utf8Text(collector.in.Source)
 	if isWrite {
-		collector.writes = append(collector.writes, WriteTarget{
+		collector.writes = append(
+			collector.writes,
+			WriteTarget{
+				Path:       path,
+				Resolvable: resolvable,
+				Argv0:      perlAnalyzerArgv0,
+				Cwd:        collector.in.Cwd,
+				Raw:        raw,
+			},
+		)
+
+		return
+	}
+
+	collector.reads = append(
+		collector.reads,
+		ReadTarget{
 			Path:       path,
 			Resolvable: resolvable,
 			Argv0:      perlAnalyzerArgv0,
 			Cwd:        collector.in.Cwd,
 			Raw:        raw,
-		})
-		return
-	}
-	collector.reads = append(collector.reads, ReadTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      perlAnalyzerArgv0,
-		Cwd:        collector.in.Cwd,
-		Raw:        raw,
-	})
+		},
+	)
 }
 
 // perlListOperands returns the named operand nodes of a list_expression
@@ -160,8 +185,10 @@ func perlListOperands(arguments *tree_sitter.Node) []*tree_sitter.Node {
 		if child == nil {
 			continue
 		}
+
 		operands = append(operands, child)
 	}
+
 	return operands
 }
 
@@ -175,19 +202,24 @@ func perlStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 	if node == nil {
 		return "", false
 	}
+
 	if node.Kind() != "interpolated_string_literal" {
 		return "", false
 	}
+
 	content := node.ChildByFieldName("content")
 	if content == nil {
 		return "", false
 	}
+
 	if content.Kind() != "string_content" {
 		return "", false
 	}
+
 	if content.NamedChildCount() != 0 {
 		return "", false
 	}
+
 	return content.Utf8Text(source), true
 }
 
@@ -223,17 +255,26 @@ func isPerlWriteMode(mode string) bool {
 // path. Surrounding whitespace around the prefix is trimmed, matching perl.
 func splitPerlTwoArgMode(value string) (string, string) {
 	trimmed := strings.TrimLeft(value, " ")
+
 	for _, prefix := range perlTwoArgModePrefixes {
 		if strings.HasPrefix(trimmed, prefix) {
 			rest := strings.TrimLeft(trimmed[len(prefix):], " ")
 			return prefix, rest
 		}
 	}
+
 	return "<", trimmed
 }
 
 // perlTwoArgModePrefixes lists the 2-arg open mode prefixes in longest-first
 // order so a longer prefix (">>") is matched before its shorter prefix (">").
 var perlTwoArgModePrefixes = []string{
-	"+>>", "+<", "+>", ">>", "<&", ">&", "<", ">",
+	"+>>",
+	"+<",
+	"+>",
+	">>",
+	"<&",
+	">&",
+	"<",
+	">",
 }

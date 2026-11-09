@@ -16,14 +16,19 @@ func jsRegionReads(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -35,14 +40,19 @@ func jsRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.WriteTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -51,20 +61,27 @@ func jsRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 func jsRegion(t *testing.T, decomposition *Decomposition) EmbeddedRegion {
 	t.Helper()
 	regions := decomposition.EmbeddedRegions()
+
 	jsRegions := make([]EmbeddedRegion, 0, len(regions))
 	for _, region := range regions {
 		if region.Lang == LangJavaScript {
 			jsRegions = append(jsRegions, region)
 		}
 	}
+
 	if len(jsRegions) != 1 {
 		t.Fatalf("javascript regions = %d, want 1", len(jsRegions))
 	}
+
 	return jsRegions[0]
 }
 
 func TestJSReadFileSyncLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.readFileSync('/abs/y.js')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.readFileSync('/abs/y.js')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := jsRegionReads(t, decomposition)
 	want := []string{"/abs/y.js"}
 	if !equalStrings(got, want) {
@@ -73,7 +90,11 @@ func TestJSReadFileSyncLiteral(t *testing.T) {
 }
 
 func TestJSReadFileRelative(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.readFile('rel.js', () => {})"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.readFile('rel.js', () => {})"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := jsRegionReads(t, decomposition)
 	want := []string{"/repo/rel.js"}
 	if !equalStrings(got, want) {
@@ -82,7 +103,11 @@ func TestJSReadFileRelative(t *testing.T) {
 }
 
 func TestJSPromisesReadFileLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.promises.readFile('/abs/z.js')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.promises.readFile('/abs/z.js')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := jsRegionReads(t, decomposition)
 	want := []string{"/abs/z.js"}
 	if !equalStrings(got, want) {
@@ -201,7 +226,10 @@ func TestJSDestructuredFromUnrelatedModuleNotRead(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := jsRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (a binding from an unrelated module is not an fs read)", got)
+		t.Fatalf(
+			"reads = %v, want none (a binding from an unrelated module is not an fs read)",
+			got,
+		)
 	}
 }
 
@@ -233,7 +261,11 @@ func TestJSDestructuredReaddirSyncCallSite(t *testing.T) {
 }
 
 func TestJSReaddirSyncLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.readdirSync('/abs/dir')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.readdirSync('/abs/dir')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := jsRegionReads(t, decomposition)
 	want := []string{"/abs/dir"}
 	if !equalStrings(got, want) {
@@ -242,7 +274,11 @@ func TestJSReaddirSyncLiteral(t *testing.T) {
 }
 
 func TestJSReaddirCallbackForm(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.readdir('/abs/dir2', () => {})"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.readdir('/abs/dir2', () => {})"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := jsRegionReads(t, decomposition)
 	want := []string{"/abs/dir2"}
 	if !equalStrings(got, want) {
@@ -251,7 +287,11 @@ func TestJSReaddirCallbackForm(t *testing.T) {
 }
 
 func TestJSCreateReadStreamLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.createReadStream('/abs/e.js')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.createReadStream('/abs/e.js')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := jsRegionReads(t, decomposition)
 	want := []string{"/abs/e.js"}
 	if !equalStrings(got, want) {
@@ -271,7 +311,10 @@ func TestJSTemplateLiteralWithSubstitutionDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := jsRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (a template literal with a substitution is never resolvable)", got)
+		t.Fatalf(
+			"reads = %v, want none (a template literal with a substitution is never resolvable)",
+			got,
+		)
 	}
 }
 
@@ -311,7 +354,10 @@ func TestJSPathJoinVariableArgDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := jsRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (a path.join argument that is not a literal drops the whole call)", got)
+		t.Fatalf(
+			"reads = %v, want none (a path.join argument that is not a literal drops the whole call)",
+			got,
+		)
 	}
 }
 
@@ -333,16 +379,24 @@ func TestJSBackslashInStringDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := jsRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (a raw backslash in the string is not decoded, so it drops)", got)
+		t.Fatalf(
+			"reads = %v, want none (a raw backslash in the string is not decoded, so it drops)",
+			got,
+		)
 	}
 }
 
 func TestJSWriteFileSyncNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.writeFileSync('/abs/j.js', 'x')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.writeFileSync('/abs/j.js', 'x')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := jsRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for fs.writeFileSync", reads)
 	}
+
 	writes := jsRegionWrites(t, decomposition)
 	want := []string{"/abs/j.js"}
 	if !equalStrings(writes, want) {
@@ -351,11 +405,16 @@ func TestJSWriteFileSyncNotRead(t *testing.T) {
 }
 
 func TestJSWriteFileNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.writeFile('/abs/k.js', 'x', () => {})"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.writeFile('/abs/k.js', 'x', () => {})"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := jsRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for fs.writeFile", reads)
 	}
+
 	writes := jsRegionWrites(t, decomposition)
 	want := []string{"/abs/k.js"}
 	if !equalStrings(writes, want) {
@@ -364,11 +423,16 @@ func TestJSWriteFileNotRead(t *testing.T) {
 }
 
 func TestJSAppendFileSyncNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.appendFileSync('/abs/l.js', 'x')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.appendFileSync('/abs/l.js', 'x')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := jsRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for fs.appendFileSync", reads)
 	}
+
 	writes := jsRegionWrites(t, decomposition)
 	want := []string{"/abs/l.js"}
 	if !equalStrings(writes, want) {
@@ -377,11 +441,16 @@ func TestJSAppendFileSyncNotRead(t *testing.T) {
 }
 
 func TestJSCreateWriteStreamNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.createWriteStream('/abs/m.js')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.createWriteStream('/abs/m.js')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := jsRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for fs.createWriteStream", reads)
 	}
+
 	writes := jsRegionWrites(t, decomposition)
 	want := []string{"/abs/m.js"}
 	if !equalStrings(writes, want) {
@@ -390,11 +459,16 @@ func TestJSCreateWriteStreamNotRead(t *testing.T) {
 }
 
 func TestJSOpenSyncWriteModeNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.openSync('/abs/n.js', 'w')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.openSync('/abs/n.js', 'w')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := jsRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for a write-flag openSync", reads)
 	}
+
 	writes := jsRegionWrites(t, decomposition)
 	want := []string{"/abs/n.js"}
 	if !equalStrings(writes, want) {
@@ -413,24 +487,35 @@ func TestJSOpenSyncNonLiteralFlagsDropped(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none", reads)
 	}
+
 	writes := jsRegionWrites(t, decomposition)
 	if len(writes) != 0 {
-		t.Fatalf("writes = %v, want none (a non-literal flags argument is dropped, not guessed)", writes)
+		t.Fatalf(
+			"writes = %v, want none (a non-literal flags argument is dropped, not guessed)",
+			writes,
+		)
 	}
 }
 
 func TestJSArgv0RecordedOnReadTarget(t *testing.T) {
-	decomposition := ParseWithOptions(`node -e "fs.readFileSync('/abs/p.js')"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`node -e "fs.readFileSync('/abs/p.js')"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	region := jsRegion(t, decomposition)
 	if region.Parsed == nil {
 		t.Fatal("javascript region should be parsed")
 	}
+
 	found := false
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if target.Resolvable && target.Path == "/abs/p.js" && target.Argv0 == "node" {
 			found = true
 		}
 	}
+
 	if !found {
 		t.Fatalf("expected a node-labeled read of /abs/p.js, got %+v", region.Parsed.ReadTargets())
 	}

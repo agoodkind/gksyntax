@@ -24,6 +24,7 @@ func analyzeSed(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	for line := range strings.SplitSeq(string(in.Source), "\n") {
 		scanner.scanLine(line)
 	}
+
 	return scanner.reads, scanner.writes
 }
 
@@ -42,21 +43,26 @@ type sedScanner struct {
 // reads the w flag of an s/// substitution, and skips commands it does not model.
 func (scanner *sedScanner) scanLine(line string) {
 	pos := 0
+
 	length := len(line)
 	for pos < length {
 		for pos < length && (line[pos] == ';' || line[pos] == ' ' || line[pos] == '\t') {
 			pos++
 		}
+
 		if pos >= length {
 			return
 		}
+
 		pos = skipSedAddress(line, pos)
 		for pos < length && (line[pos] == ' ' || line[pos] == '\t' || line[pos] == '!') {
 			pos++
 		}
+
 		if pos >= length {
 			return
 		}
+
 		command := line[pos]
 		switch command {
 		case '#':
@@ -72,9 +78,11 @@ func (scanner *sedScanner) scanLine(line string) {
 			if writeName != "" {
 				scanner.addWrite(writeName)
 			}
+
 			if consumedLine {
 				return
 			}
+
 			pos = next
 		case 'a', 'i', 'c', 'e':
 			return
@@ -97,6 +105,7 @@ func skipSedAddress(line string, pos int) int {
 	if pos < len(line) && line[pos] == ',' {
 		pos = skipOneSedAddress(line, pos+1)
 	}
+
 	return pos
 }
 
@@ -108,6 +117,7 @@ func skipOneSedAddress(line string, pos int) int {
 	if pos >= length {
 		return pos
 	}
+
 	char := line[pos]
 	switch {
 	case char == '$':
@@ -116,12 +126,14 @@ func skipOneSedAddress(line string, pos int) int {
 		for pos < length && line[pos] >= '0' && line[pos] <= '9' {
 			pos++
 		}
+
 		if pos < length && (line[pos] == '~' || line[pos] == '+') {
 			pos++
 			for pos < length && line[pos] >= '0' && line[pos] <= '9' {
 				pos++
 			}
 		}
+
 		return pos
 	case char == '/':
 		return skipSedDelimited(line, pos+1, '/')
@@ -129,6 +141,7 @@ func skipOneSedAddress(line string, pos int) int {
 		if pos+1 >= length {
 			return pos + 1
 		}
+
 		return skipSedDelimited(line, pos+2, line[pos+1])
 	default:
 		return pos
@@ -146,11 +159,14 @@ func skipSedDelimited(line string, pos int, delim byte) int {
 			pos += 2
 			continue
 		}
+
 		if line[pos] == delim {
 			return pos + 1
 		}
+
 		pos++
 	}
+
 	return pos
 }
 
@@ -165,19 +181,24 @@ func scanSedSubstitution(line string, pos int) (int, string, bool) {
 	if pos >= length {
 		return pos, "", true
 	}
+
 	delim := line[pos]
 	pos = skipSedDelimited(line, pos+1, delim)
+
 	pos = skipSedDelimited(line, pos, delim)
 	for pos < length {
 		char := line[pos]
 		if char == ';' || char == ' ' || char == '\t' {
 			return pos, "", false
 		}
+
 		if char == 'w' {
 			return length, strings.TrimSpace(line[pos+1:]), true
 		}
+
 		pos++
 	}
+
 	return pos, "", true
 }
 
@@ -187,19 +208,24 @@ func (scanner *sedScanner) addRead(name string) {
 	if name == "" {
 		return
 	}
+
 	resolved := scanner.scope.resolvePath(name)
 	resolvable := resolved != Unresolvable && resolved != ""
 	path := resolved
 	if !resolvable {
 		path = Unresolvable
 	}
-	scanner.reads = append(scanner.reads, ReadTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      sedArgv0,
-		Cwd:        scanner.in.Cwd,
-		Raw:        name,
-	})
+
+	scanner.reads = append(
+		scanner.reads,
+		ReadTarget{
+			Path:       path,
+			Resolvable: resolvable,
+			Argv0:      sedArgv0,
+			Cwd:        scanner.in.Cwd,
+			Raw:        name,
+		},
+	)
 }
 
 // addWrite resolves a sed write-command filename against the cwd and records it.
@@ -207,17 +233,22 @@ func (scanner *sedScanner) addWrite(name string) {
 	if name == "" {
 		return
 	}
+
 	resolved := scanner.scope.resolvePath(name)
 	resolvable := resolved != Unresolvable && resolved != ""
 	path := resolved
 	if !resolvable {
 		path = Unresolvable
 	}
-	scanner.writes = append(scanner.writes, WriteTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      sedArgv0,
-		Cwd:        scanner.in.Cwd,
-		Raw:        name,
-	})
+
+	scanner.writes = append(
+		scanner.writes,
+		WriteTarget{
+			Path:       path,
+			Resolvable: resolvable,
+			Argv0:      sedArgv0,
+			Cwd:        scanner.in.Cwd,
+			Raw:        name,
+		},
+	)
 }

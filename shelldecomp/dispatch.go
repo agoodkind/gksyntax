@@ -58,13 +58,19 @@ func lookupDispatcher(argv0 string) (Dispatcher, bool) {
 	registry.mutex.RLock()
 	defer registry.mutex.RUnlock()
 	dispatcher, found := registry.byArgv0[argv0]
+
 	return dispatcher, found
 }
 
 // dispatchEmbedded finds embedded code in a command through the dispatch table
 // and turns each embedding into an EmbeddedRegion, recursing into a child parse
 // when the embedded language has a grammar and the depth budget allows it.
-func (walk *walker) dispatchEmbedded(node *tree_sitter.Node, command Command, args []rawArg, currentScope *scope) {
+func (walk *walker) dispatchEmbedded(
+	node *tree_sitter.Node,
+	command Command,
+	args []rawArg,
+	currentScope *scope,
+) {
 	_ = node
 	_ = args
 	embeddings, handled := walk.pythonEmbeddings(command, currentScope)
@@ -73,8 +79,10 @@ func (walk *walker) dispatchEmbedded(node *tree_sitter.Node, command Command, ar
 		if !found {
 			return
 		}
+
 		embeddings = dispatcher(command, walk.source)
 	}
+
 	for _, embedding := range embeddings {
 		region := walk.buildEmbeddedRegion(embedding, currentScope)
 		walk.result.embedded = append(walk.result.embedded, region)
@@ -95,6 +103,7 @@ func (walk *walker) buildEmbeddedRegion(embedding Embedding, currentScope *scope
 		NewScope:  embedding.NewScope,
 	}
 	region.Parsed = walk.parseEmbedding(embedding, currentScope)
+
 	return region
 }
 
@@ -106,13 +115,16 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 	if walk.depth <= 1 {
 		return nil
 	}
+
 	if embedding.Lang == LangShell {
 		return walk.parseShellEmbedding(embedding, currentScope)
 	}
+
 	grammarName := embedding.Lang.grammarName()
 	if grammarName == "" {
 		return walk.analyzeGrammarlessEmbedding(embedding, currentScope)
 	}
+
 	return parseForeign(
 		grammarName,
 		[]byte(embedding.Text),
@@ -132,11 +144,15 @@ func (walk *walker) parseEmbedding(embedding Embedding, currentScope *scope) *De
 // sub-language read more reliably from text than from an inadequate grammar
 // (sed's r/w commands). A language with no registered analyzer returns nil, so
 // the region stays located but unparsed exactly as before.
-func (walk *walker) analyzeGrammarlessEmbedding(embedding Embedding, currentScope *scope) *Decomposition {
+func (walk *walker) analyzeGrammarlessEmbedding(
+	embedding Embedding,
+	currentScope *scope,
+) *Decomposition {
 	analyzer, ok := lookupAnalyzer(embedding.Lang)
 	if !ok {
 		return nil
 	}
+
 	reads, writes := analyzer(AnalyzerInput{
 		Root:     nil,
 		Source:   []byte(embedding.Text),
@@ -150,6 +166,7 @@ func (walk *walker) analyzeGrammarlessEmbedding(embedding Embedding, currentScop
 	for index := range writes {
 		writes[index].Origin = WriteOriginAnalysis
 	}
+
 	return &Decomposition{
 		source:   []byte(embedding.Text),
 		lang:     embedding.Lang,
@@ -170,7 +187,15 @@ func (walk *walker) parseShellEmbedding(embedding Embedding, currentScope *scope
 	if embedding.NewScope {
 		baseCwd = currentScope.cwd
 	}
-	return parseShellOpts([]byte(embedding.Text), baseCwd, walk.homeDir, walk.depth-1, walk.resolver, walk.visited)
+
+	return parseShellOpts(
+		[]byte(embedding.Text),
+		baseCwd,
+		walk.homeDir,
+		walk.depth-1,
+		walk.resolver,
+		walk.visited,
+	)
 }
 
 // flagValueEmbedding extracts the value of a flag (for example -c or -e) as a
@@ -182,22 +207,28 @@ func flagValueEmbedding(cmd Command, flag string, lang Lang) []Embedding {
 		if cmd.Args[index].Text != flag {
 			continue
 		}
+
 		if index+1 >= len(cmd.Args) {
 			return nil
 		}
+
 		value := cmd.Args[index+1]
 		if !value.Resolvable {
 			return nil
 		}
-		return []Embedding{{
-			StartByte: 0,
-			EndByte:   0,
-			Text:      value.Value,
-			Lang:      lang,
-			NewScope:  true,
-			AsCommand: false,
-		}}
+
+		return []Embedding{
+			{
+				StartByte: 0,
+				EndByte:   0,
+				Text:      value.Value,
+				Lang:      lang,
+				NewScope:  true,
+				AsCommand: false,
+			},
+		}
 	}
+
 	return nil
 }
 
@@ -208,18 +239,23 @@ func trailingEmbedding(cmd Command, lang Lang, newScope bool, asCommand bool) []
 		if strings.HasPrefix(arg.Text, "-") {
 			continue
 		}
+
 		if !arg.Resolvable {
 			return nil
 		}
-		return []Embedding{{
-			StartByte: 0,
-			EndByte:   0,
-			Text:      arg.Value,
-			Lang:      lang,
-			NewScope:  newScope,
-			AsCommand: asCommand,
-		}}
+
+		return []Embedding{
+			{
+				StartByte: 0,
+				EndByte:   0,
+				Text:      arg.Value,
+				Lang:      lang,
+				NewScope:  newScope,
+				AsCommand: asCommand,
+			},
+		}
 	}
+
 	return nil
 }
 
@@ -232,19 +268,25 @@ func firstPositionalEmbedding(cmd Command, lang Lang, newScope bool, asCommand b
 		if strings.HasPrefix(arg.Text, "-") {
 			continue
 		}
+
 		if !arg.Resolvable {
 			return nil
 		}
+
 		rest := joinFrom(cmd.Args, index)
-		return []Embedding{{
-			StartByte: 0,
-			EndByte:   0,
-			Text:      rest,
-			Lang:      lang,
-			NewScope:  newScope,
-			AsCommand: asCommand,
-		}}
+
+		return []Embedding{
+			{
+				StartByte: 0,
+				EndByte:   0,
+				Text:      rest,
+				Lang:      lang,
+				NewScope:  newScope,
+				AsCommand: asCommand,
+			},
+		}
 	}
+
 	return nil
 }
 
@@ -256,7 +298,9 @@ func joinFrom(args []Word, start int) string {
 		if !args[index].Resolvable {
 			return strings.Join(parts, " ")
 		}
+
 		parts = append(parts, args[index].Value)
 	}
+
 	return strings.Join(parts, " ")
 }

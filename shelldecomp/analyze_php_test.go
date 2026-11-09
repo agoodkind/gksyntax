@@ -15,14 +15,19 @@ func phpRegionReads(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -34,14 +39,19 @@ func phpRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.WriteTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -50,15 +60,18 @@ func phpRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 func phpRegion(t *testing.T, decomposition *Decomposition) EmbeddedRegion {
 	t.Helper()
 	regions := decomposition.EmbeddedRegions()
+
 	phpRegions := make([]EmbeddedRegion, 0, len(regions))
 	for _, region := range regions {
 		if region.Lang == LangPHP {
 			phpRegions = append(phpRegions, region)
 		}
 	}
+
 	if len(phpRegions) != 1 {
 		t.Fatalf("php regions = %d, want 1", len(phpRegions))
 	}
+
 	return phpRegions[0]
 }
 
@@ -73,13 +86,18 @@ func TestPHPDashRProducesParsedPHPRegion(t *testing.T) {
 	if region.Lang != LangPHP {
 		t.Fatalf("php region lang = %v, want LangPHP", region.Lang)
 	}
+
 	if region.Parsed == nil {
 		t.Fatal("php embedding should be parsed (php_only grammar exists)")
 	}
 }
 
 func TestPHPFileGetContentsLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "file_get_contents('/abs/y.php');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "file_get_contents('/abs/y.php');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := phpRegionReads(t, decomposition)
 	want := []string{"/abs/y.php"}
 	if !equalStrings(got, want) {
@@ -88,7 +106,11 @@ func TestPHPFileGetContentsLiteral(t *testing.T) {
 }
 
 func TestPHPFileGetContentsRelative(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "file_get_contents('rel.php');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "file_get_contents('rel.php');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := phpRegionReads(t, decomposition)
 	want := []string{"/repo/rel.php"}
 	if !equalStrings(got, want) {
@@ -97,7 +119,11 @@ func TestPHPFileGetContentsRelative(t *testing.T) {
 }
 
 func TestPHPFileLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "file('/abs/z.php');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "file('/abs/z.php');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := phpRegionReads(t, decomposition)
 	want := []string{"/abs/z.php"}
 	if !equalStrings(got, want) {
@@ -106,7 +132,11 @@ func TestPHPFileLiteral(t *testing.T) {
 }
 
 func TestPHPReadfileLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "readfile('/abs/a.php');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "readfile('/abs/a.php');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := phpRegionReads(t, decomposition)
 	want := []string{"/abs/a.php"}
 	if !equalStrings(got, want) {
@@ -115,7 +145,11 @@ func TestPHPReadfileLiteral(t *testing.T) {
 }
 
 func TestPHPScandirLiteral(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "scandir('/abs/d');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "scandir('/abs/d');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := phpRegionReads(t, decomposition)
 	want := []string{"/abs/d"}
 	if !equalStrings(got, want) {
@@ -139,7 +173,11 @@ func TestPHPGlobResolvesPrefixDir(t *testing.T) {
 }
 
 func TestPHPFopenReadMode(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "fopen('/abs/b.php', 'r');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "fopen('/abs/b.php', 'r');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	got := phpRegionReads(t, decomposition)
 	want := []string{"/abs/b.php"}
 	if !equalStrings(got, want) {
@@ -148,11 +186,16 @@ func TestPHPFopenReadMode(t *testing.T) {
 }
 
 func TestPHPFopenWriteModeNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "fopen('/abs/c.php', 'w');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "fopen('/abs/c.php', 'w');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := phpRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for a write-mode fopen", reads)
 	}
+
 	writes := phpRegionWrites(t, decomposition)
 	want := []string{"/abs/c.php"}
 	if !equalStrings(writes, want) {
@@ -161,11 +204,16 @@ func TestPHPFopenWriteModeNotRead(t *testing.T) {
 }
 
 func TestPHPFopenAppendModeNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "fopen('/abs/e.php', 'a');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "fopen('/abs/e.php', 'a');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := phpRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for an append-mode fopen", reads)
 	}
+
 	writes := phpRegionWrites(t, decomposition)
 	want := []string{"/abs/e.php"}
 	if !equalStrings(writes, want) {
@@ -184,6 +232,7 @@ func TestPHPFopenNonLiteralModeDropped(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none (a non-literal mode is dropped, not guessed)", reads)
 	}
+
 	writes := phpRegionWrites(t, decomposition)
 	if len(writes) != 0 {
 		t.Fatalf("writes = %v, want none", writes)
@@ -191,11 +240,16 @@ func TestPHPFopenNonLiteralModeDropped(t *testing.T) {
 }
 
 func TestPHPFilePutContentsIsWriteNotRead(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "file_put_contents('/abs/g.php', 'x');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "file_put_contents('/abs/g.php', 'x');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	reads := phpRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for file_put_contents", reads)
 	}
+
 	writes := phpRegionWrites(t, decomposition)
 	want := []string{"/abs/g.php"}
 	if !equalStrings(writes, want) {
@@ -217,7 +271,10 @@ func TestPHPInterpolatedPathDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := phpRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (an interpolated double-quoted string is not a literal)", got)
+		t.Fatalf(
+			"reads = %v, want none (an interpolated double-quoted string is not a literal)",
+			got,
+		)
 	}
 }
 
@@ -245,7 +302,10 @@ func TestPHPEscapedBackslashDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := phpRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (escape_sequence raw text is not the decoded value, so it drops)", got)
+		t.Fatalf(
+			"reads = %v, want none (escape_sequence raw text is not the decoded value, so it drops)",
+			got,
+		)
 	}
 }
 
@@ -260,7 +320,10 @@ func TestPHPHeredocPathDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := phpRegionReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none (a heredoc is not a plain string literal, so it drops)", got)
+		t.Fatalf(
+			"reads = %v, want none (a heredoc is not a plain string literal, so it drops)",
+			got,
+		)
 	}
 }
 
@@ -278,8 +341,12 @@ func TestPHPFopenNamedArgumentsReorderedDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	reads := phpRegionReads(t, decomposition)
 	if len(reads) != 0 {
-		t.Fatalf("reads = %v, want none (named arguments are dropped, not resolved positionally)", reads)
+		t.Fatalf(
+			"reads = %v, want none (named arguments are dropped, not resolved positionally)",
+			reads,
+		)
 	}
+
 	writes := phpRegionWrites(t, decomposition)
 	if len(writes) != 0 {
 		t.Fatalf("writes = %v, want none", writes)
@@ -295,8 +362,12 @@ func TestPHPFilePutContentsNamedArgumentsReorderedDropped(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	writes := phpRegionWrites(t, decomposition)
 	if len(writes) != 0 {
-		t.Fatalf("writes = %v, want none (named arguments are dropped, not resolved positionally)", writes)
+		t.Fatalf(
+			"writes = %v, want none (named arguments are dropped, not resolved positionally)",
+			writes,
+		)
 	}
+
 	reads := phpRegionReads(t, decomposition)
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none", reads)
@@ -321,17 +392,24 @@ func TestPHPGlobNamedArgumentDropped(t *testing.T) {
 }
 
 func TestPHPArgv0RecordedOnReadTarget(t *testing.T) {
-	decomposition := ParseWithOptions(`php -r "file_get_contents('/abs/j.php');"`, "/repo", Options{Home: "/home/u"})
+	decomposition := ParseWithOptions(
+		`php -r "file_get_contents('/abs/j.php');"`,
+		"/repo",
+		Options{Home: "/home/u"},
+	)
 	region := phpRegion(t, decomposition)
 	if region.Parsed == nil {
 		t.Fatal("php region should be parsed")
 	}
+
 	found := false
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if target.Resolvable && target.Path == "/abs/j.php" && target.Argv0 == "php" {
 			found = true
 		}
 	}
+
 	if !found {
 		t.Fatalf("expected a php-labeled read of /abs/j.php, got %+v", region.Parsed.ReadTargets())
 	}

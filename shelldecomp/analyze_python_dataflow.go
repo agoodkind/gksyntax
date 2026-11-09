@@ -73,12 +73,14 @@ var pythonTaintUnionKinds = map[string]bool{
 func (collector *pythonCollector) buildPathVars(root *tree_sitter.Node) {
 	var assignments []*tree_sitter.Node
 	collectKinds(root, map[string]bool{"assignment": true}, &assignments)
+
 	for _, assignment := range assignments {
 		left := assignment.ChildByFieldName("left")
 		right := assignment.ChildByFieldName("right")
 		if left == nil || right == nil || left.Kind() != "identifier" {
 			continue
 		}
+
 		name := left.Utf8Text(collector.in.Source)
 		// Last write wins, and a reassignment to a non-path expression clears the
 		// binding so a later read does not resolve to a stale path.
@@ -97,13 +99,16 @@ func (collector *pythonCollector) pathBindingNode(right *tree_sitter.Node) *tree
 	if _, ok := stringLiteralValue(right, collector.in.Source); ok {
 		return right
 	}
+
 	if right.Kind() != "call" {
 		return nil
 	}
+
 	function := right.ChildByFieldName("function")
 	if function == nil || !isPathConstructor(function, collector.in.Source) {
 		return nil
 	}
+
 	return positionalArg(right.ChildByFieldName("arguments"), 0)
 }
 
@@ -115,22 +120,27 @@ func (collector *pythonCollector) pathBindingNode(right *tree_sitter.Node) *tree
 func (collector *pythonCollector) buildEnumTaint(root *tree_sitter.Node) {
 	var binders []*tree_sitter.Node
 	collectKinds(root, pythonBinderKinds, &binders)
+
 	for iteration := 0; iteration <= len(binders); iteration++ {
 		changed := false
+
 		for _, binder := range binders {
 			right := binder.ChildByFieldName("right")
 			left := binder.ChildByFieldName("left")
 			if right == nil || left == nil {
 				continue
 			}
+
 			dirs := collector.taintDirs(right)
 			if len(dirs) == 0 {
 				continue
 			}
+
 			if collector.taintTargets(left, dirs) {
 				changed = true
 			}
 		}
+
 		if !changed {
 			return
 		}
@@ -144,15 +154,19 @@ func (collector *pythonCollector) taintTargets(left *tree_sitter.Node, dirs []st
 	if left == nil {
 		return false
 	}
+
 	if left.Kind() == "identifier" {
 		return collector.addTaint(left.Utf8Text(collector.in.Source), dirs)
 	}
+
 	changed := false
+
 	for index := range left.NamedChildCount() {
 		if collector.taintTargets(left.NamedChild(index), dirs) {
 			changed = true
 		}
 	}
+
 	return changed
 }
 
@@ -164,7 +178,9 @@ func (collector *pythonCollector) addTaint(name string, dirs []string) bool {
 	if len(merged) == len(existing) {
 		return false
 	}
+
 	collector.enumTaint[name] = merged
+
 	return true
 }
 
@@ -177,26 +193,34 @@ func (collector *pythonCollector) taintDirs(node *tree_sitter.Node) []string {
 	if node == nil {
 		return nil
 	}
+
 	kind := node.Kind()
 	if kind == "call" {
 		return collector.callTaintDirs(node)
 	}
+
 	if kind == "identifier" {
 		return collector.enumTaint[node.Utf8Text(collector.in.Source)]
 	}
+
 	if kind == "attribute" {
 		return collector.taintDirs(node.ChildByFieldName("object"))
 	}
+
 	if kind == "subscript" {
 		return collector.taintDirs(node.ChildByFieldName("value"))
 	}
+
 	if pythonTaintUnionKinds[kind] {
 		merged := []string{}
+
 		for index := range node.NamedChildCount() {
 			merged = mergeUnique(merged, collector.taintDirs(node.NamedChild(index)))
 		}
+
 		return merged
 	}
+
 	return nil
 }
 
@@ -206,14 +230,18 @@ func (collector *pythonCollector) callTaintDirs(node *tree_sitter.Node) []string
 	if dirs, ok := collector.sourceDir(node); ok {
 		return dirs
 	}
+
 	function := node.ChildByFieldName("function")
 	arguments := node.ChildByFieldName("arguments")
 	if function == nil {
 		return nil
 	}
-	if function.Kind() == "identifier" && pythonTaintWrapperFuncs[function.Utf8Text(collector.in.Source)] {
+
+	if function.Kind() == "identifier" &&
+		pythonTaintWrapperFuncs[function.Utf8Text(collector.in.Source)] {
 		return collector.taintDirs(positionalArg(arguments, 0))
 	}
+
 	if function.Kind() == "attribute" {
 		object := function.ChildByFieldName("object")
 		attribute := function.ChildByFieldName("attribute")
@@ -223,6 +251,7 @@ func (collector *pythonCollector) callTaintDirs(node *tree_sitter.Node) []string
 			return collector.unionArgTaint(arguments)
 		}
 	}
+
 	return nil
 }
 
@@ -232,14 +261,18 @@ func (collector *pythonCollector) unionArgTaint(arguments *tree_sitter.Node) []s
 	if arguments == nil {
 		return nil
 	}
+
 	merged := []string{}
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() == "keyword_argument" {
 			continue
 		}
+
 		merged = mergeUnique(merged, collector.taintDirs(child))
 	}
+
 	return merged
 }
 
@@ -253,28 +286,34 @@ func (collector *pythonCollector) sourceDir(node *tree_sitter.Node) ([]string, b
 	if function == nil || function.Kind() != "attribute" {
 		return nil, false
 	}
+
 	object := function.ChildByFieldName("object")
 	attribute := function.ChildByFieldName("attribute")
 	if attribute == nil {
 		return nil, false
 	}
+
 	method := attribute.Utf8Text(collector.in.Source)
 	objectName := ""
 	if object != nil {
 		objectName = object.Utf8Text(collector.in.Source)
 	}
+
 	if objectName == "glob" && pythonGlobModuleFuncs[method] {
 		dirs := collector.globPatternDir(arguments)
 		return dirs, len(dirs) > 0
 	}
+
 	if objectName == "os" && pythonOsWalkFuncs[method] {
 		dirs := collector.resolveDirArg(positionalArg(arguments, 0))
 		return dirs, len(dirs) > 0
 	}
+
 	if pythonPathTraversalMethods[method] {
 		dirs := collector.resolveReceiverDir(object)
 		return dirs, len(dirs) > 0
 	}
+
 	return nil, false
 }
 
@@ -285,17 +324,21 @@ func (collector *pythonCollector) resolveReceiverDir(object *tree_sitter.Node) [
 	if object == nil {
 		return nil
 	}
+
 	if object.Kind() == "call" {
 		if arg := pathConstructorArg(object, collector.in.Source); arg != nil {
 			return collector.resolvePathArg(arg)
 		}
+
 		return nil
 	}
+
 	if object.Kind() == "identifier" {
 		if bound, ok := collector.pathVars[object.Utf8Text(collector.in.Source)]; ok {
 			return collector.resolvePathArg(bound)
 		}
 	}
+
 	return nil
 }
 
@@ -305,14 +348,17 @@ func (collector *pythonCollector) resolveDirArg(node *tree_sitter.Node) []string
 	if node == nil {
 		return nil
 	}
+
 	if resolved := collector.resolvePathArg(node); len(resolved) > 0 {
 		return resolved
 	}
+
 	if node.Kind() == "identifier" {
 		if bound, ok := collector.pathVars[node.Utf8Text(collector.in.Source)]; ok {
 			return collector.resolvePathArg(bound)
 		}
 	}
+
 	return nil
 }
 
@@ -324,10 +370,12 @@ func (collector *pythonCollector) globPatternDir(arguments *tree_sitter.Node) []
 	if !ok {
 		return nil
 	}
+
 	prefix := pattern
 	if wildcard := strings.IndexAny(pattern, "*?["); wildcard >= 0 {
 		prefix = pattern[:wildcard]
 	}
+
 	dir := "."
 	if slash := strings.LastIndex(prefix, "/"); slash >= 0 {
 		dir = prefix[:slash]
@@ -335,7 +383,9 @@ func (collector *pythonCollector) globPatternDir(arguments *tree_sitter.Node) []
 			dir = "/"
 		}
 	}
+
 	scope := scope{cwd: collector.in.Cwd, homeDir: collector.in.Home}
+
 	return []string{scope.resolvePath(dir)}
 }
 
@@ -347,35 +397,44 @@ func (collector *pythonCollector) fstringPrefixDir(node *tree_sitter.Node) []str
 	if node == nil || node.Kind() != "string" {
 		return nil
 	}
+
 	var prefix strings.Builder
 	sawInterpolation := false
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		kind := child.Kind()
 		if kind == "interpolation" {
 			sawInterpolation = true
 			break
 		}
+
 		if kind == "string_content" {
 			prefix.WriteString(child.Utf8Text(collector.in.Source))
 		}
 	}
+
 	if !sawInterpolation {
 		return nil
 	}
+
 	text := prefix.String()
 	slash := strings.LastIndex(text, "/")
 	if slash < 0 {
 		return nil
 	}
+
 	dir := text[:slash]
 	if dir == "" {
 		dir = "/"
 	}
+
 	scope := scope{cwd: collector.in.Cwd, homeDir: collector.in.Home}
+
 	return []string{scope.resolvePath(dir)}
 }
 
@@ -385,9 +444,11 @@ func collectKinds(node *tree_sitter.Node, kinds map[string]bool, out *[]*tree_si
 	if node == nil {
 		return
 	}
+
 	if kinds[node.Kind()] {
 		*out = append(*out, node)
 	}
+
 	for index := range node.ChildCount() {
 		collectKinds(node.Child(index), kinds, out)
 	}
@@ -397,20 +458,25 @@ func collectKinds(node *tree_sitter.Node, kinds map[string]bool, out *[]*tree_si
 // dropping duplicates and empties.
 func mergeUnique(existing []string, additions []string) []string {
 	seen := make(map[string]bool, len(existing))
+
 	merged := make([]string, 0, len(existing)+len(additions))
 	for _, value := range existing {
 		if value == "" || seen[value] {
 			continue
 		}
+
 		seen[value] = true
 		merged = append(merged, value)
 	}
+
 	for _, value := range additions {
 		if value == "" || seen[value] {
 			continue
 		}
+
 		seen[value] = true
 		merged = append(merged, value)
 	}
+
 	return merged
 }

@@ -74,6 +74,7 @@ func analyzePython(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector.buildPathVars(in.Root)
 	collector.buildEnumTaint(in.Root)
 	collector.walk(in.Root)
+
 	return collector.reads, collector.writes
 }
 
@@ -99,9 +100,11 @@ func (collector *pythonCollector) walk(node *tree_sitter.Node) {
 	if node == nil {
 		return
 	}
+
 	if node.Kind() == "call" {
 		collector.classifyCall(node)
 	}
+
 	for index := range node.ChildCount() {
 		collector.walk(node.Child(index))
 	}
@@ -117,10 +120,12 @@ func (collector *pythonCollector) classifyCall(node *tree_sitter.Node) {
 	if function == nil {
 		return
 	}
+
 	if function.Kind() == "identifier" {
 		collector.classifyNamedCall(function.Utf8Text(collector.in.Source), arguments)
 		return
 	}
+
 	if function.Kind() == "attribute" {
 		collector.classifyAttributeCall(function, arguments)
 	}
@@ -137,12 +142,16 @@ func (collector *pythonCollector) classifyNamedCall(name string, arguments *tree
 // classifyAttributeCall handles a call whose function is an attribute access. It
 // routes io.open, fileinput.input, os.system, the subprocess functions, and the
 // pathlib read and write methods by the attribute name and receiver shape.
-func (collector *pythonCollector) classifyAttributeCall(function *tree_sitter.Node, arguments *tree_sitter.Node) {
+func (collector *pythonCollector) classifyAttributeCall(
+	function *tree_sitter.Node,
+	arguments *tree_sitter.Node,
+) {
 	object := function.ChildByFieldName("object")
 	attributeNode := function.ChildByFieldName("attribute")
 	if attributeNode == nil {
 		return
 	}
+
 	method := attributeNode.Utf8Text(collector.in.Source)
 	objectName := ""
 	if object != nil {
@@ -153,26 +162,32 @@ func (collector *pythonCollector) classifyAttributeCall(function *tree_sitter.No
 		collector.classifyOpen(arguments)
 		return
 	}
+
 	if method == "input" && objectName == "fileinput" {
 		collector.classifyFileinput(arguments)
 		return
 	}
+
 	if method == "system" && objectName == "os" {
 		collector.recurseOsSystem(arguments)
 		return
 	}
+
 	if objectName == "subprocess" && pythonSubprocessFuncs[method] {
 		collector.recurseSubprocess(arguments)
 		return
 	}
+
 	if pythonReadMethods[method] {
 		collector.classifyPathMethod(object, true)
 		return
 	}
+
 	if pythonWriteMethods[method] {
 		collector.classifyPathMethod(object, false)
 		return
 	}
+
 	if method == "open" {
 		collector.classifyPathOpen(object, arguments)
 	}
@@ -186,15 +201,18 @@ func (collector *pythonCollector) classifyOpen(arguments *tree_sitter.Node) {
 	if arguments == nil {
 		return
 	}
+
 	pathNode := positionalArg(arguments, 0)
 	if pathNode == nil {
 		return
 	}
+
 	mode := openMode(arguments, collector.in.Source)
 	if isWriteMode(mode) {
 		collector.addWrites(pathNode)
 		return
 	}
+
 	collector.addReads(pathNode)
 }
 
@@ -210,12 +228,15 @@ func (collector *pythonCollector) classifyPathMethod(object *tree_sitter.Node, i
 		if isRead {
 			collector.addReads(object)
 		}
+
 		return
 	}
+
 	if isRead {
 		collector.addReads(pathNode)
 		return
 	}
+
 	collector.addWrites(pathNode)
 }
 
@@ -224,19 +245,25 @@ func (collector *pythonCollector) classifyPathMethod(object *tree_sitter.Node, i
 // Path(...) call, a read still resolves through the receiver expression, so a
 // `p.open()` whose `p` is a variable bound to a Path or an enumerated walk value
 // surfaces its target; a plain object.open() that resolves to nothing is ignored.
-func (collector *pythonCollector) classifyPathOpen(object *tree_sitter.Node, arguments *tree_sitter.Node) {
+func (collector *pythonCollector) classifyPathOpen(
+	object *tree_sitter.Node,
+	arguments *tree_sitter.Node,
+) {
 	mode := firstStringArg(arguments, collector.in.Source)
 	pathNode := pathConstructorArg(object, collector.in.Source)
 	if pathNode == nil {
 		if !isWriteMode(mode) {
 			collector.addReads(object)
 		}
+
 		return
 	}
+
 	if isWriteMode(mode) {
 		collector.addWrites(pathNode)
 		return
 	}
+
 	collector.addReads(pathNode)
 }
 
@@ -249,11 +276,13 @@ func (collector *pythonCollector) classifyFileinput(arguments *tree_sitter.Node)
 		collector.addArgvReads()
 		return
 	}
+
 	for index := range listNode.NamedChildCount() {
 		entry := listNode.NamedChild(index)
 		if entry == nil {
 			continue
 		}
+
 		collector.addReads(entry)
 	}
 }
@@ -266,6 +295,7 @@ func (collector *pythonCollector) recurseOsSystem(arguments *tree_sitter.Node) {
 	if commandLine == "" {
 		return
 	}
+
 	collector.recurseCommandLine(commandLine)
 }
 
@@ -278,21 +308,26 @@ func (collector *pythonCollector) recurseSubprocess(arguments *tree_sitter.Node)
 	if listNode == nil {
 		return
 	}
+
 	parts := make([]string, 0, listNode.NamedChildCount())
 	for index := range listNode.NamedChildCount() {
 		entry := listNode.NamedChild(index)
 		if entry == nil {
 			continue
 		}
+
 		value, ok := stringLiteralValue(entry, collector.in.Source)
 		if !ok {
 			return
 		}
+
 		parts = append(parts, value)
 	}
+
 	if len(parts) == 0 {
 		return
 	}
+
 	collector.recurseCommandLine(strings.Join(parts, " "))
 }
 
@@ -304,6 +339,7 @@ func (collector *pythonCollector) recurseCommandLine(commandLine string) {
 	if collector.in.Depth-1 <= 0 {
 		return
 	}
+
 	child := parseShellOpts(
 		[]byte(commandLine),
 		collector.in.Cwd,
@@ -328,6 +364,7 @@ func (collector *pythonCollector) addReads(node *tree_sitter.Node) {
 		if collector.seenRead[resolved] {
 			continue
 		}
+
 		collector.seenRead[resolved] = true
 		collector.reads = append(collector.reads, collector.readTarget(resolved, node))
 	}
@@ -342,6 +379,7 @@ func (collector *pythonCollector) addWrites(node *tree_sitter.Node) {
 		if collector.seenWrite[resolved] {
 			continue
 		}
+
 		collector.seenWrite[resolved] = true
 		collector.writes = append(collector.writes, collector.writeTarget(resolved, node))
 	}
@@ -356,9 +394,11 @@ func (collector *pythonCollector) resolveReadNodes(node *tree_sitter.Node) []str
 	if node == nil {
 		return nil
 	}
+
 	if literal := collector.resolvePathArg(node); len(literal) > 0 {
 		return literal
 	}
+
 	if node.Kind() == "identifier" {
 		if bound, ok := collector.pathVars[node.Utf8Text(collector.in.Source)]; ok {
 			if resolved := collector.resolvePathArg(bound); len(resolved) > 0 {
@@ -366,9 +406,11 @@ func (collector *pythonCollector) resolveReadNodes(node *tree_sitter.Node) []str
 			}
 		}
 	}
+
 	if prefix := collector.fstringPrefixDir(node); len(prefix) > 0 {
 		return prefix
 	}
+
 	return collector.taintDirs(node)
 }
 
@@ -390,13 +432,16 @@ func (collector *pythonCollector) resolvePathArg(node *tree_sitter.Node) []strin
 	if node == nil {
 		return nil
 	}
+
 	scope := scope{cwd: collector.in.Cwd, homeDir: collector.in.Home}
 	if value, ok := stringLiteralValue(node, collector.in.Source); ok {
 		return []string{scope.resolvePath(value)}
 	}
+
 	if node.Kind() == "subscript" {
 		return collector.resolveArgvSubscript(node, scope)
 	}
+
 	return nil
 }
 
@@ -404,29 +449,38 @@ func (collector *pythonCollector) resolvePathArg(node *tree_sitter.Node) []strin
 // index N maps to argv[N-1], skipping argv[0] which is the script name; a slice
 // maps to every argv entry. A subscript of anything but sys.argv or argv, or an
 // out-of-range index, resolves to nothing.
-func (collector *pythonCollector) resolveArgvSubscript(node *tree_sitter.Node, scope scope) []string {
+func (collector *pythonCollector) resolveArgvSubscript(
+	node *tree_sitter.Node,
+	scope scope,
+) []string {
 	value := node.ChildByFieldName("value")
 	if value == nil || !isArgvExpression(value, collector.in.Source) {
 		return nil
 	}
+
 	subscript := node.ChildByFieldName("subscript")
 	if subscript == nil {
 		return nil
 	}
+
 	if subscript.Kind() == "slice" {
 		resolved := make([]string, 0, len(collector.in.Argv))
 		for _, entry := range collector.in.Argv {
 			resolved = append(resolved, scope.resolvePath(entry))
 		}
+
 		return resolved
 	}
+
 	if subscript.Kind() == "integer" {
 		index, err := strconv.Atoi(subscript.Utf8Text(collector.in.Source))
 		if err != nil || index < 1 || index > len(collector.in.Argv) {
 			return nil
 		}
+
 		return []string{scope.resolvePath(collector.in.Argv[index-1])}
 	}
+
 	return nil
 }
 
@@ -444,6 +498,7 @@ func (collector *pythonCollector) readTargetRaw(resolved string, raw string) Rea
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return ReadTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -461,6 +516,7 @@ func (collector *pythonCollector) writeTarget(resolved string, node *tree_sitter
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return WriteTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -475,16 +531,20 @@ func (collector *pythonCollector) writeTarget(resolved string, node *tree_sitter
 // surrounding punctuation. It returns nil when there is no nth positional.
 func positionalArg(arguments *tree_sitter.Node, n int) *tree_sitter.Node {
 	count := 0
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() == "keyword_argument" {
 			continue
 		}
+
 		if count == n {
 			return child
 		}
+
 		count++
 	}
+
 	return nil
 }
 
@@ -497,23 +557,28 @@ func openMode(arguments *tree_sitter.Node, source []byte) string {
 			return value
 		}
 	}
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() != "keyword_argument" {
 			continue
 		}
+
 		nameNode := child.ChildByFieldName("name")
 		valueNode := child.ChildByFieldName("value")
 		if nameNode == nil || valueNode == nil {
 			continue
 		}
+
 		if nameNode.Utf8Text(source) != "mode" {
 			continue
 		}
+
 		if value, ok := stringLiteralValue(valueNode, source); ok {
 			return value
 		}
 	}
+
 	return ""
 }
 
@@ -524,14 +589,17 @@ func firstStringArg(arguments *tree_sitter.Node, source []byte) string {
 	if arguments == nil {
 		return ""
 	}
+
 	first := positionalArg(arguments, 0)
 	if first == nil {
 		return ""
 	}
+
 	value, ok := stringLiteralValue(first, source)
 	if !ok {
 		return ""
 	}
+
 	return value
 }
 
@@ -542,10 +610,12 @@ func firstPositionalList(arguments *tree_sitter.Node) *tree_sitter.Node {
 	if arguments == nil {
 		return nil
 	}
+
 	first := positionalArg(arguments, 0)
 	if first == nil || first.Kind() != "list" {
 		return nil
 	}
+
 	return first
 }
 
@@ -557,14 +627,17 @@ func pathConstructorArg(object *tree_sitter.Node, source []byte) *tree_sitter.No
 	if object == nil || object.Kind() != "call" {
 		return nil
 	}
+
 	function := object.ChildByFieldName("function")
 	if function == nil || !isPathConstructor(function, source) {
 		return nil
 	}
+
 	arguments := object.ChildByFieldName("arguments")
 	if arguments == nil {
 		return nil
 	}
+
 	return positionalArg(arguments, 0)
 }
 
@@ -574,13 +647,16 @@ func isPathConstructor(function *tree_sitter.Node, source []byte) bool {
 	if function.Kind() == "identifier" {
 		return function.Utf8Text(source) == "Path"
 	}
+
 	if function.Kind() == "attribute" {
 		attributeNode := function.ChildByFieldName("attribute")
 		if attributeNode == nil {
 			return false
 		}
+
 		return attributeNode.Utf8Text(source) == "Path"
 	}
+
 	return false
 }
 
@@ -590,14 +666,17 @@ func isArgvExpression(node *tree_sitter.Node, source []byte) bool {
 	if node.Kind() == "identifier" {
 		return node.Utf8Text(source) == "argv"
 	}
+
 	if node.Kind() == "attribute" {
 		object := node.ChildByFieldName("object")
 		attributeNode := node.ChildByFieldName("attribute")
 		if object == nil || attributeNode == nil {
 			return false
 		}
+
 		return object.Utf8Text(source) == "sys" && attributeNode.Utf8Text(source) == "argv"
 	}
+
 	return false
 }
 
@@ -609,22 +688,28 @@ func stringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool) {
 	if node == nil || node.Kind() != "string" {
 		return "", false
 	}
+
 	var content strings.Builder
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		kind := child.Kind()
 		if kind == "string_start" || kind == "string_end" {
 			continue
 		}
+
 		if kind == "string_content" {
 			content.WriteString(child.Utf8Text(source))
 			continue
 		}
+
 		return "", false
 	}
+
 	return content.String(), true
 }
 

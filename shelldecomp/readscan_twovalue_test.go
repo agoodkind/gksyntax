@@ -10,6 +10,7 @@ import (
 func sortedReadPaths(decomposition *Decomposition) []string {
 	paths := append([]string(nil), readPaths(decomposition)...)
 	slices.Sort(paths)
+
 	return paths
 }
 
@@ -43,12 +44,15 @@ func TestJqTwoValueFlagsDoNotFabricateAPath(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
-			if !slices.Equal(got, testCase.want) {
-				t.Fatalf("read paths = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
+				if !slices.Equal(got, testCase.want) {
+					t.Fatalf("read paths = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }
 
@@ -73,12 +77,15 @@ func TestJqFileValuedFlagsResolveTheirDataFile(t *testing.T) {
 		},
 	}
 	for _, testCase := range cases {
-		t.Run(testCase.name, func(t *testing.T) {
-			got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
-			if !slices.Equal(got, testCase.want) {
-				t.Fatalf("read paths = %v, want %v", got, testCase.want)
-			}
-		})
+		t.Run(
+			testCase.name,
+			func(t *testing.T) {
+				got := sortedReadPaths(Parse(testCase.command, "/repo", "/home/u"))
+				if !slices.Equal(got, testCase.want) {
+					t.Fatalf("read paths = %v, want %v", got, testCase.want)
+				}
+			},
+		)
 	}
 }
 

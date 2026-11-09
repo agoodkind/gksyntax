@@ -10,26 +10,34 @@ import (
 // embedded region's recursive decomposition.
 func sedRegionTargets(t *testing.T, command, cwd string) ([]string, []string) {
 	t.Helper()
+
 	decomposition := Parse(command, cwd, "/home/u")
 	for _, region := range decomposition.EmbeddedRegions() {
 		if region.Lang != LangSed || region.Parsed == nil {
 			continue
 		}
+
 		var reads []string
+
 		for _, target := range region.Parsed.ReadTargets() {
 			reads = append(reads, target.Path)
 		}
+
 		var writes []string
+
 		for _, target := range region.Parsed.WriteTargets() {
 			writes = append(writes, target.Path)
 		}
+
 		return reads, writes
 	}
+
 	return nil, nil
 }
 
 func TestAnalyzeSedReads(t *testing.T) {
 	const cwd = "/repo"
+
 	cases := []struct {
 		name    string
 		command string
@@ -45,17 +53,21 @@ func TestAnalyzeSedReads(t *testing.T) {
 		{"w in regex is not a read", `sed 's/w/x/g' in`, nil},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			reads, _ := sedRegionTargets(t, tc.command, cwd)
-			if !slices.Equal(reads, tc.want) {
-				t.Fatalf("reads for %q = %v, want %v", tc.command, reads, tc.want)
-			}
-		})
+		t.Run(
+			tc.name,
+			func(t *testing.T) {
+				reads, _ := sedRegionTargets(t, tc.command, cwd)
+				if !slices.Equal(reads, tc.want) {
+					t.Fatalf("reads for %q = %v, want %v", tc.command, reads, tc.want)
+				}
+			},
+		)
 	}
 }
 
 func TestAnalyzeSedWrites(t *testing.T) {
 	const cwd = "/repo"
+
 	cases := []struct {
 		name    string
 		command string
@@ -70,12 +82,15 @@ func TestAnalyzeSedWrites(t *testing.T) {
 		{"empty w filename", `sed -n 'w' in`, nil},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			_, writes := sedRegionTargets(t, tc.command, cwd)
-			if !slices.Equal(writes, tc.want) {
-				t.Fatalf("writes for %q = %v, want %v", tc.command, writes, tc.want)
-			}
-		})
+		t.Run(
+			tc.name,
+			func(t *testing.T) {
+				_, writes := sedRegionTargets(t, tc.command, cwd)
+				if !slices.Equal(writes, tc.want) {
+					t.Fatalf("writes for %q = %v, want %v", tc.command, writes, tc.want)
+				}
+			},
+		)
 	}
 }
 
@@ -86,6 +101,7 @@ func TestAnalyzeSedMultilineScript(t *testing.T) {
 	if !slices.Equal(reads, []string{"/repo/inc.txt"}) {
 		t.Fatalf("reads = %v, want [/repo/inc.txt]", reads)
 	}
+
 	if !slices.Equal(writes, []string{"/repo/out.txt"}) {
 		t.Fatalf("writes = %v, want [/repo/out.txt]", writes)
 	}

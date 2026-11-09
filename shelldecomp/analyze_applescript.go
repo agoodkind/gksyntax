@@ -71,11 +71,13 @@ func init() {
 func analyzeAppleScript(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &appleScriptCollector{in: in, scope: scope{cwd: in.Cwd, homeDir: in.Home}}
 	inBlockComment := false
+
 	for line := range strings.SplitSeq(string(in.Source), "\n") {
 		var tokens []asToken
 		tokens, inBlockComment = tokenizeAppleScriptLine(line, inBlockComment)
 		collector.scanTokens(tokens)
 	}
+
 	return collector.reads, collector.writes
 }
 
@@ -123,6 +125,7 @@ type asToken struct {
 func tokenizeAppleScriptLine(line string, inBlock bool) ([]asToken, bool) {
 	var tokens []asToken
 	pos := 0
+
 	length := len(line)
 	for pos < length {
 		if inBlock {
@@ -130,10 +133,12 @@ func tokenizeAppleScriptLine(line string, inBlock bool) ([]asToken, bool) {
 			if end < 0 {
 				return tokens, true
 			}
+
 			pos += end + 2
 			inBlock = false
 			continue
 		}
+
 		char := line[pos]
 		switch {
 		case char == ' ' || char == '\t' || char == '\r':
@@ -147,24 +152,30 @@ func tokenizeAppleScriptLine(line string, inBlock bool) ([]asToken, bool) {
 			start := pos
 			pos = scanAppleScriptStringLiteral(line, pos)
 			raw := line[start:pos]
-			tokens = append(tokens, asToken{
-				Kind:         asTokenString,
-				Text:         raw,
-				Value:        asUnquoteLiteral(raw),
-				HasBackslash: strings.ContainsRune(raw, '\\'),
-			})
+			tokens = append(
+				tokens,
+				asToken{
+					Kind:         asTokenString,
+					Text:         raw,
+					Value:        asUnquoteLiteral(raw),
+					HasBackslash: strings.ContainsRune(raw, '\\'),
+				},
+			)
 		case isASIdentStart(char):
 			start := pos
+
 			pos++
 			for pos < length && isASIdentPart(line[pos]) {
 				pos++
 			}
+
 			tokens = append(tokens, asToken{Kind: asTokenIdent, Text: line[start:pos]})
 		default:
 			tokens = append(tokens, asToken{Kind: asTokenOther, Text: string(char)})
 			pos++
 		}
 	}
+
 	return tokens, inBlock
 }
 
@@ -175,17 +186,21 @@ func tokenizeAppleScriptLine(line string, inBlock bool) ([]asToken, bool) {
 // literal runs to the end of the line.
 func scanAppleScriptStringLiteral(line string, pos int) int {
 	length := len(line)
+
 	pos++
 	for pos < length {
 		if line[pos] == '\\' {
 			pos += 2
 			continue
 		}
+
 		if line[pos] == '"' {
 			return pos + 1
 		}
+
 		pos++
 	}
+
 	return pos
 }
 
@@ -210,6 +225,7 @@ func asUnquoteLiteral(raw string) string {
 	if len(raw) < 2 {
 		return ""
 	}
+
 	return raw[1 : len(raw)-1]
 }
 
@@ -220,6 +236,7 @@ func (collector *appleScriptCollector) scanTokens(tokens []asToken) {
 		if token.Kind != asTokenIdent {
 			continue
 		}
+
 		switch {
 		case strings.EqualFold(token.Text, asKeywordRead):
 			collector.scanRead(tokens, index)
@@ -236,14 +253,17 @@ func (collector *appleScriptCollector) scanTokens(tokens []asToken) {
 // nothing is recorded.
 func (collector *appleScriptCollector) scanRead(tokens []asToken, index int) {
 	next := index + 1
-	if matchAppleScriptIdent(tokens, next, asKeywordPOSIX) && matchAppleScriptIdent(tokens, next+1, asKeywordFile) {
+	if matchAppleScriptIdent(tokens, next, asKeywordPOSIX) &&
+		matchAppleScriptIdent(tokens, next+1, asKeywordFile) {
 		collector.addLiteralRead(tokens, next+2)
 		return
 	}
+
 	if matchAppleScriptIdent(tokens, next, asKeywordFile) {
 		collector.addLiteralRead(tokens, next+1)
 		return
 	}
+
 	if matchAppleScriptIdent(tokens, next, asKeywordAlias) {
 		collector.addLiteralRead(tokens, next+1)
 	}
@@ -261,11 +281,14 @@ func (collector *appleScriptCollector) scanWrite(tokens []asToken, index int) {
 		if !matchAppleScriptIdent(tokens, cursor, asKeywordTo) {
 			continue
 		}
+
 		next := cursor + 1
-		if matchAppleScriptIdent(tokens, next, asKeywordPOSIX) && matchAppleScriptIdent(tokens, next+1, asKeywordFile) {
+		if matchAppleScriptIdent(tokens, next, asKeywordPOSIX) &&
+			matchAppleScriptIdent(tokens, next+1, asKeywordFile) {
 			collector.addLiteralWrite(tokens, next+2)
 			return
 		}
+
 		if matchAppleScriptIdent(tokens, next, asKeywordFile) {
 			collector.addLiteralWrite(tokens, next+1)
 			return
@@ -280,7 +303,9 @@ func matchAppleScriptIdent(tokens []asToken, index int, want string) bool {
 	if index < 0 || index >= len(tokens) {
 		return false
 	}
+
 	token := tokens[index]
+
 	return token.Kind == asTokenIdent && strings.EqualFold(token.Text, want)
 }
 
@@ -294,16 +319,21 @@ func appleScriptLiteralTarget(tokens []asToken, literalIndex int) (string, bool)
 	if literalIndex >= len(tokens) || tokens[literalIndex].Kind != asTokenString {
 		return "", false
 	}
+
 	literal := tokens[literalIndex]
 	if literal.HasBackslash {
 		return "", false
 	}
-	if literalIndex+1 < len(tokens) && tokens[literalIndex+1].Kind == asTokenOther && tokens[literalIndex+1].Text == "&" {
+
+	if literalIndex+1 < len(tokens) && tokens[literalIndex+1].Kind == asTokenOther &&
+		tokens[literalIndex+1].Text == "&" {
 		return "", false
 	}
+
 	if isHFSStylePath(literal.Value) {
 		return "", false
 	}
+
 	return literal.Value, true
 }
 
@@ -322,6 +352,7 @@ func (collector *appleScriptCollector) addLiteralRead(tokens []asToken, literalI
 	if !ok {
 		return
 	}
+
 	collector.addRead(value, tokens[literalIndex].Text)
 }
 
@@ -332,6 +363,7 @@ func (collector *appleScriptCollector) addLiteralWrite(tokens []asToken, literal
 	if !ok {
 		return
 	}
+
 	collector.addWrite(value, tokens[literalIndex].Text)
 }
 
@@ -344,13 +376,17 @@ func (collector *appleScriptCollector) addRead(value string, raw string) {
 	if !resolvable {
 		path = Unresolvable
 	}
-	collector.reads = append(collector.reads, ReadTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      appleScriptArgv0,
-		Cwd:        collector.in.Cwd,
-		Raw:        raw,
-	})
+
+	collector.reads = append(
+		collector.reads,
+		ReadTarget{
+			Path:       path,
+			Resolvable: resolvable,
+			Argv0:      appleScriptArgv0,
+			Cwd:        collector.in.Cwd,
+			Raw:        raw,
+		},
+	)
 }
 
 // addWrite resolves a path value against the cwd and records it as a write
@@ -362,11 +398,15 @@ func (collector *appleScriptCollector) addWrite(value string, raw string) {
 	if !resolvable {
 		path = Unresolvable
 	}
-	collector.writes = append(collector.writes, WriteTarget{
-		Path:       path,
-		Resolvable: resolvable,
-		Argv0:      appleScriptArgv0,
-		Cwd:        collector.in.Cwd,
-		Raw:        raw,
-	})
+
+	collector.writes = append(
+		collector.writes,
+		WriteTarget{
+			Path:       path,
+			Resolvable: resolvable,
+			Argv0:      appleScriptArgv0,
+			Cwd:        collector.in.Cwd,
+			Raw:        raw,
+		},
+	)
 }

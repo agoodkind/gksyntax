@@ -14,17 +14,24 @@ func (decomposition *Decomposition) Assignments() []Assignment {
 // ResolveWord resolves a word at byteOffset using same-scope literal
 // assignments that appeared earlier in the parsed source. It returns false when
 // the word cannot be pinned without consulting ambient shell state.
-func (decomposition *Decomposition) ResolveWord(text string, scopeID int, byteOffset uint) (string, bool) {
+func (decomposition *Decomposition) ResolveWord(
+	text string,
+	scopeID int,
+	byteOffset uint,
+) (string, bool) {
 	assignments := make(map[string]assignmentValue)
+
 	for _, assignment := range decomposition.assigns {
 		if assignment.ScopeID != scopeID || assignment.EndByte > byteOffset {
 			continue
 		}
+
 		assignments[assignment.Name] = assignmentValue{
 			value:      assignment.Value,
 			resolvable: assignment.Resolvable,
 		}
 	}
+
 	return resolveExpansionText(text, assignments)
 }
 
@@ -62,12 +69,15 @@ func (decomposition *Decomposition) IsOpaque() bool {
 // and "" when the starting directory was unknown and no cd has run yet.
 func (decomposition *Decomposition) EffectiveCwdAt(byteOffset uint) string {
 	cwd := ""
+
 	for index := range decomposition.cwdSpans {
 		span := decomposition.cwdSpans[index]
 		if span.startByte > byteOffset {
 			break
 		}
+
 		cwd = span.cwd
 	}
+
 	return cwd
 }

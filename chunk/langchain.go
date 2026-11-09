@@ -88,112 +88,348 @@ var languageKeyAliases = map[string]langchainLanguage{
 // declaration-first shape.
 var langchainSeparatorTable = map[langchainLanguage][]string{
 	langchainLangJSFamily: {
-		"\nfunction ", "\nconst ", "\nlet ", "\nvar ", "\nclass ",
-		"\nif ", "\nfor ", "\nwhile ", "\nswitch ", "\ncase ", "\ndefault ",
-		"\n\n", "\n", " ", "",
+		"\nfunction ",
+		"\nconst ",
+		"\nlet ",
+		"\nvar ",
+		"\nclass ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nswitch ",
+		"\ncase ",
+		"\ndefault ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangPython: {
-		"\nclass ", "\ndef ", "\n\tdef ",
-		"\n\n", "\n", " ", "",
+		"\nclass ",
+		"\ndef ",
+		"\n\tdef ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangJava: {
-		"\nclass ", "\npublic ", "\nprotected ", "\nprivate ", "\nstatic ",
-		"\nif ", "\nfor ", "\nwhile ", "\nswitch ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nclass ",
+		"\npublic ",
+		"\nprotected ",
+		"\nprivate ",
+		"\nstatic ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nswitch ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangCFamily: {
-		"\nclass ", "\nvoid ", "\nint ", "\nfloat ", "\ndouble ",
-		"\nif ", "\nfor ", "\nwhile ", "\nswitch ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nclass ",
+		"\nvoid ",
+		"\nint ",
+		"\nfloat ",
+		"\ndouble ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nswitch ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangGo: {
-		"\nfunc ", "\nvar ", "\nconst ", "\ntype ",
-		"\nif ", "\nfor ", "\nswitch ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nfunc ",
+		"\nvar ",
+		"\nconst ",
+		"\ntype ",
+		"\nif ",
+		"\nfor ",
+		"\nswitch ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangRust: {
-		"\nfn ", "\nconst ", "\nlet ",
-		"\nif ", "\nwhile ", "\nfor ", "\nloop ", "\nmatch ",
-		"\n\n", "\n", " ", "",
+		"\nfn ",
+		"\nconst ",
+		"\nlet ",
+		"\nif ",
+		"\nwhile ",
+		"\nfor ",
+		"\nloop ",
+		"\nmatch ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangPHP: {
-		"\nfunction ", "\nclass ",
-		"\nif ", "\nforeach ", "\nwhile ", "\ndo ", "\nswitch ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nfunction ",
+		"\nclass ",
+		"\nif ",
+		"\nforeach ",
+		"\nwhile ",
+		"\ndo ",
+		"\nswitch ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangRuby: {
-		"\ndef ", "\nclass ",
-		"\nif ", "\nunless ", "\nwhile ", "\nfor ", "\ndo ", "\nbegin ", "\nrescue ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\ndef ",
+		"\nclass ",
+		"\nif ",
+		"\nunless ",
+		"\nwhile ",
+		"\nfor ",
+		"\ndo ",
+		"\nbegin ",
+		"\nrescue ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangSwift: {
-		"\nfunc ", "\nclass ", "\nstruct ", "\nenum ", "\nactor ",
-		"\nif ", "\nfor ", "\nwhile ", "\ndo ", "\nswitch ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nfunc ",
+		"\nclass ",
+		"\nstruct ",
+		"\nenum ",
+		"\nactor ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\ndo ",
+		"\nswitch ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangScala: {
-		"\nclass ", "\nobject ", "\ndef ", "\nval ", "\nvar ",
-		"\nif ", "\nfor ", "\nwhile ", "\nmatch ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nclass ",
+		"\nobject ",
+		"\ndef ",
+		"\nval ",
+		"\nvar ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nmatch ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangCSharp: {
-		"\ninterface ", "\nenum ", "\nimplements ", "\ndelegate ", "\nevent ",
-		"\nclass ", "\nabstract ", "\npublic ", "\nprotected ", "\nprivate ", "\nstatic ", "\nreturn ",
-		"\nif ", "\ncontinue ", "\nfor ", "\nforeach ", "\nwhile ", "\nswitch ", "\nbreak ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\ninterface ",
+		"\nenum ",
+		"\nimplements ",
+		"\ndelegate ",
+		"\nevent ",
+		"\nclass ",
+		"\nabstract ",
+		"\npublic ",
+		"\nprotected ",
+		"\nprivate ",
+		"\nstatic ",
+		"\nreturn ",
+		"\nif ",
+		"\ncontinue ",
+		"\nfor ",
+		"\nforeach ",
+		"\nwhile ",
+		"\nswitch ",
+		"\nbreak ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangHTML: {
-		"<body", "<div", "<p", "<br", "<li", "<h1", "<h2", "<h3", "<h4", "<h5", "<h6",
-		"<span", "<table", "<tr", "<td", "<th", "<ul", "<ol", "<header", "<footer", "<nav",
-		"<head", "<style", "<script", "<meta", "<title", "",
+		"<body",
+		"<div",
+		"<p",
+		"<br",
+		"<li",
+		"<h1",
+		"<h2",
+		"<h3",
+		"<h4",
+		"<h5",
+		"<h6",
+		"<span",
+		"<table",
+		"<tr",
+		"<td",
+		"<th",
+		"<ul",
+		"<ol",
+		"<header",
+		"<footer",
+		"<nav",
+		"<head",
+		"<style",
+		"<script",
+		"<meta",
+		"<title",
+		"",
 	},
 	langchainLangMarkdown: {
-		"\n## ", "\n### ", "\n#### ", "\n##### ", "\n###### ",
-		"```\n\n", "\n\n***\n\n", "\n\n---\n\n", "\n\n___\n\n",
-		"\n\n", "\n", " ", "",
+		"\n## ",
+		"\n### ",
+		"\n#### ",
+		"\n##### ",
+		"\n###### ",
+		"```\n\n",
+		"\n\n***\n\n",
+		"\n\n---\n\n",
+		"\n\n___\n\n",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangLatex: {
-		"\n\\chapter{", "\n\\section{", "\n\\subsection{", "\n\\subsubsection{",
-		"\n\\begin{enumerate}", "\n\\begin{itemize}", "\n\\begin{description}", "\n\\begin{list}",
-		"\n\\begin{quote}", "\n\\begin{quotation}", "\n\\begin{verse}", "\n\\begin{verbatim}",
-		"\n\\begin{align}", "$$", "$", " ", "",
+		"\n\\chapter{",
+		"\n\\section{",
+		"\n\\subsection{",
+		"\n\\subsubsection{",
+		"\n\\begin{enumerate}",
+		"\n\\begin{itemize}",
+		"\n\\begin{description}",
+		"\n\\begin{list}",
+		"\n\\begin{quote}",
+		"\n\\begin{quotation}",
+		"\n\\begin{verse}",
+		"\n\\begin{verbatim}",
+		"\n\\begin{align}",
+		"$$",
+		"$",
+		" ",
+		"",
 	},
 	langchainLangSolidity: {
-		"\npragma ", "\nusing ",
-		"\ncontract ", "\ninterface ", "\nlibrary ",
-		"\nconstructor ", "\ntype ", "\nfunction ", "\nevent ", "\nmodifier ", "\nerror ",
-		"\nstruct ", "\nenum ",
-		"\nif ", "\nfor ", "\nwhile ", "\ndo while ", "\nassembly ",
-		"\n\n", "\n", " ", "",
+		"\npragma ",
+		"\nusing ",
+		"\ncontract ",
+		"\ninterface ",
+		"\nlibrary ",
+		"\nconstructor ",
+		"\ntype ",
+		"\nfunction ",
+		"\nevent ",
+		"\nmodifier ",
+		"\nerror ",
+		"\nstruct ",
+		"\nenum ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\ndo while ",
+		"\nassembly ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangKotlin: {
-		"\nfun ", "\nclass ", "\nobject ", "\ninterface ", "\ndata class ", "\nsealed class ", "\nenum class ",
-		"\nval ", "\nvar ",
-		"\nif ", "\nfor ", "\nwhile ", "\nwhen ",
-		"\n\n", "\n", " ", "",
+		"\nfun ",
+		"\nclass ",
+		"\nobject ",
+		"\ninterface ",
+		"\ndata class ",
+		"\nsealed class ",
+		"\nenum class ",
+		"\nval ",
+		"\nvar ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nwhen ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangObjC: {
-		"\n@interface ", "\n@implementation ", "\n@protocol ", "\n@property ",
-		"\n- (", "\n+ (",
-		"\nif ", "\nfor ", "\nwhile ", "\nswitch ",
-		"\n\n", "\n", " ", "",
+		"\n@interface ",
+		"\n@implementation ",
+		"\n@protocol ",
+		"\n@property ",
+		"\n- (",
+		"\n+ (",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nswitch ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangDart: {
-		"\nclass ", "\nabstract class ", "\nenum ", "\nmixin ", "\nextension ", "\ntypedef ",
-		"\nvoid ", "\nFuture", "\nStream",
-		"\nif ", "\nfor ", "\nwhile ", "\nswitch ",
-		"\n\n", "\n", " ", "",
+		"\nclass ",
+		"\nabstract class ",
+		"\nenum ",
+		"\nmixin ",
+		"\nextension ",
+		"\ntypedef ",
+		"\nvoid ",
+		"\nFuture",
+		"\nStream",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nswitch ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangBash: {
-		"\nfunction ", "\n# ",
-		"\nif ", "\nfor ", "\nwhile ", "\nuntil ", "\ncase ",
-		"\n\n", "\n", " ", "",
+		"\nfunction ",
+		"\n# ",
+		"\nif ",
+		"\nfor ",
+		"\nwhile ",
+		"\nuntil ",
+		"\ncase ",
+		"\n\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangJSON: {
-		"\n\n", "\n  \"", "\n\t\"", "\n", " ", "",
+		"\n\n",
+		"\n  \"",
+		"\n\t\"",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangCSS: {
-		"\n\n", "}\n", "\n", " ", "",
+		"\n\n",
+		"}\n",
+		"\n",
+		" ",
+		"",
 	},
 	langchainLangDefault: {"\n\n", "\n", " ", ""},
 }
@@ -204,6 +440,7 @@ func langchainSeparators(language string) []string {
 	if !found {
 		key = langchainLangDefault
 	}
+
 	return langchainSeparatorTable[key]
 }
 
@@ -213,6 +450,7 @@ func recursiveSplit(content string, separators []string, chunkSize int) []string
 		if content == "" {
 			return nil
 		}
+
 		return []string{content}
 	}
 
@@ -224,28 +462,34 @@ func recursiveSplit(content string, separators []string, chunkSize int) []string
 		if piece == "" {
 			continue
 		}
+
 		if len(piece) <= chunkSize {
 			chunks = append(chunks, piece)
 			continue
 		}
+
 		if len(remaining) == 0 {
 			chunks = append(chunks, hardSplit(piece, chunkSize)...)
 			continue
 		}
+
 		chunks = append(chunks, recursiveSplit(piece, remaining, chunkSize)...)
 	}
+
 	return mergeAdjacent(chunks, separator, chunkSize)
 }
 
 func chooseSeparator(content string, separators []string) (string, []string) {
-	for i, sep := range separators {
+	for index, sep := range separators {
 		if sep == "" {
-			return sep, separators[i+1:]
+			return sep, separators[index+1:]
 		}
+
 		if strings.Contains(content, sep) {
-			return sep, separators[i+1:]
+			return sep, separators[index+1:]
 		}
 	}
+
 	return "", nil
 }
 
@@ -255,25 +499,31 @@ func splitOnSeparator(content string, separator string) []string {
 		for _, r := range content {
 			out = append(out, string(r))
 		}
+
 		return out
 	}
+
 	parts := strings.Split(content, separator)
 	if len(parts) == 1 {
 		return parts
 	}
+
 	out := make([]string, 0, len(parts))
 	for i, part := range parts {
 		if i == 0 {
 			out = append(out, part)
 			continue
 		}
+
 		out = append(out, separator+part)
 	}
+
 	return out
 }
 
 func hardSplit(content string, chunkSize int) []string {
 	out := make([]string, 0, (len(content)+chunkSize-1)/chunkSize)
+
 	start := 0
 	for start < len(content) {
 		end := min(start+chunkSize, len(content))
@@ -284,9 +534,11 @@ func hardSplit(content string, chunkSize int) []string {
 				end = start + size
 			}
 		}
+
 		out = append(out, content[start:end])
 		start = end
 	}
+
 	return out
 }
 
@@ -294,7 +546,9 @@ func mergeAdjacent(pieces []string, separator string, chunkSize int) []string {
 	if len(pieces) == 0 {
 		return pieces
 	}
+
 	merged := make([]string, 0, len(pieces))
+
 	current := pieces[0]
 	for _, piece := range pieces[1:] {
 		candidate := current + piece
@@ -302,44 +556,60 @@ func mergeAdjacent(pieces []string, separator string, chunkSize int) []string {
 			current = candidate
 			continue
 		}
+
 		merged = append(merged, current)
 		current = piece
 	}
+
 	merged = append(merged, current)
 	_ = separator
+
 	return merged
 }
 
 // langchainSplit produces chunks for a file using the language-aware
 // recursive splitter. The returned chunks preserve start/end line numbers
 // computed from the original content offsets.
-func langchainSplit(content string, language string, path string, chunkSize int, overlap int) []Chunk {
+func langchainSplit(
+	content string,
+	language string,
+	path string,
+	chunkSize int,
+	overlap int,
+) []Chunk {
 	if content == "" {
 		return nil
 	}
+
 	separators := langchainSeparators(language)
 	pieces := recursiveSplit(content, separators, chunkSize)
 
 	chunks := make([]Chunk, 0, len(pieces))
 	cursor := 0
+
 	for _, piece := range pieces {
 		if piece == "" {
 			continue
 		}
+
 		index := max(strings.Index(content[cursor:], piece), 0)
 		startByte := cursor + index
 		endByte := startByte + len(piece)
 		startLine := byteOffsetToLine(content, startByte)
 		endLine := byteOffsetToLine(content, endByte-1)
-		chunks = append(chunks, Chunk{
-			Content:   piece,
-			StartLine: startLine,
-			EndLine:   endLine,
-			Language:  language,
-			FilePath:  path,
-		})
+		chunks = append(
+			chunks,
+			Chunk{
+				Content:   piece,
+				StartLine: startLine,
+				EndLine:   endLine,
+				Language:  language,
+				FilePath:  path,
+			},
+		)
 		cursor = endByte
 	}
+
 	return addOverlap(chunks, overlap)
 }
 
@@ -347,14 +617,18 @@ func byteOffsetToLine(content string, offset int) int {
 	if offset < 0 {
 		return 1
 	}
+
 	if offset >= len(content) {
 		offset = len(content) - 1
 	}
+
 	line := 1
+
 	for i := 0; i <= offset && i < len(content); i++ {
 		if content[i] == '\n' {
 			line++
 		}
 	}
+
 	return line
 }

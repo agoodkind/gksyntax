@@ -10,16 +10,21 @@ import (
 func perlOperandReads(t *testing.T, decomposition *Decomposition) []string {
 	t.Helper()
 	paths := make([]string, 0)
+
 	for _, target := range decomposition.ReadTargets() {
 		if target.Argv0 != "perl" {
 			continue
 		}
+
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -96,7 +101,10 @@ func TestPerlLoopFlagNoScriptNoOperandRead(t *testing.T) {
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	got := perlOperandReads(t, decomposition)
 	if len(got) != 0 {
-		t.Fatalf("reads = %v, want none when -n carries no -e/-E script (script.pl is the program file)", got)
+		t.Fatalf(
+			"reads = %v, want none when -n carries no -e/-E script (script.pl is the program file)",
+			got,
+		)
 	}
 }
 

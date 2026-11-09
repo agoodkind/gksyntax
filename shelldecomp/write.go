@@ -10,14 +10,20 @@ import (
 // with a descriptor that points at another descriptor (2>&1) names no file and
 // is skipped; a redirect to a literal file is a resolvable write target; a
 // redirect to an expansion is an unresolvable write target.
-func (walk *walker) handleFileRedirect(node *tree_sitter.Node, command Command, currentScope *scope) {
+func (walk *walker) handleFileRedirect(
+	node *tree_sitter.Node,
+	command Command,
+	currentScope *scope,
+) {
 	if !isOutputRedirect(node) {
 		return
 	}
+
 	destination := node.ChildByFieldName("destination")
 	if destination == nil {
 		return
 	}
+
 	// A descriptor target (2>&1) names no file. A process or command substitution
 	// (> >(tee log)) is not a file either; resolving its text would fabricate a
 	// path, so it is skipped rather than recorded as a write.
@@ -25,12 +31,14 @@ func (walk *walker) handleFileRedirect(node *tree_sitter.Node, command Command, 
 		destination.Kind() == "process_substitution" || destination.Kind() == "command_substitution" {
 		return
 	}
+
 	token := resolveArgNode(destination, walk.source, currentScope)
 	target := resolveWriteTarget(command.Argv0, token, currentScope)
 	target.Origin = WriteOriginRedirect
 	if command.Node != nil {
 		target.CommandStartByte = command.Node.StartByte
 	}
+
 	walk.result.writes = append(walk.result.writes, target)
 }
 
@@ -51,10 +59,12 @@ func isOutputRedirect(node *tree_sitter.Node) bool {
 		if child == nil || child.IsNamed() {
 			continue
 		}
+
 		if outputRedirectOps[redirectOp(child.Kind())] {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -76,22 +86,27 @@ func (walk *walker) collectInlineWrites(command Command, args []rawArg, currentS
 		walk.teeWrites(argv0, args, currentScope)
 		return
 	}
+
 	if argv0 == "dd" {
 		walk.ddWrite(argv0, args, currentScope)
 		return
 	}
+
 	if argv0 == "sed" {
 		walk.sedInplaceWrite(command, args, currentScope)
 		return
 	}
+
 	if argv0 == "awk" || argv0 == "gawk" {
 		walk.awkInplaceWrite(command, args, currentScope)
 		return
 	}
+
 	if argv0 == "patch" {
 		walk.patchWrite(argv0, args, currentScope)
 		return
 	}
+
 	if argv0 == "git" {
 		walk.gitApplyWrite(args, currentScope)
 	}
@@ -103,7 +118,11 @@ func (walk *walker) teeWrites(argv0 string, args []rawArg, currentScope *scope) 
 		if strings.HasPrefix(arg.text, "-") {
 			continue
 		}
-		walk.result.writes = append(walk.result.writes, resolveWriteTarget(argv0, arg, currentScope))
+
+		walk.result.writes = append(
+			walk.result.writes,
+			resolveWriteTarget(argv0, arg, currentScope),
+		)
 	}
 }
 
@@ -113,6 +132,7 @@ func (walk *walker) ddWrite(argv0 string, args []rawArg, currentScope *scope) {
 		if !strings.HasPrefix(arg.text, "of=") {
 			continue
 		}
+
 		value := strings.TrimPrefix(arg.text, "of=")
 		token := rawArg{
 			text:       value,
@@ -121,7 +141,10 @@ func (walk *walker) ddWrite(argv0 string, args []rawArg, currentScope *scope) {
 			startByte:  arg.startByte,
 			endByte:    arg.endByte,
 		}
-		walk.result.writes = append(walk.result.writes, resolveWriteTarget(argv0, token, currentScope))
+		walk.result.writes = append(
+			walk.result.writes,
+			resolveWriteTarget(argv0, token, currentScope),
+		)
 	}
 }
 
@@ -131,6 +154,7 @@ func (walk *walker) sedInplaceWrite(command Command, args []rawArg, currentScope
 	if !hasInPlaceSedFlag(args) {
 		return
 	}
+
 	walk.scriptToolWrites(command.Argv0, args, currentScope)
 }
 
@@ -140,6 +164,7 @@ func (walk *walker) awkInplaceWrite(command Command, args []rawArg, currentScope
 	if !hasInPlaceAwkFlag(args) {
 		return
 	}
+
 	walk.scriptToolWrites(command.Argv0, args, currentScope)
 }
 
@@ -148,6 +173,7 @@ func (walk *walker) awkInplaceWrite(command Command, args []rawArg, currentScope
 // operand. The script is the first bare operand and is not a file.
 func (walk *walker) scriptToolWrites(argv0 string, args []rawArg, currentScope *scope) {
 	scriptTaken := false
+
 	index := 0
 	for index < len(args) {
 		arg := args[index]
@@ -156,15 +182,21 @@ func (walk *walker) scriptToolWrites(argv0 string, args []rawArg, currentScope *
 				index += 2
 				continue
 			}
+
 			index++
 			continue
 		}
+
 		if !scriptTaken {
 			scriptTaken = true
 			index++
 			continue
 		}
-		walk.result.writes = append(walk.result.writes, resolveWriteTarget(argv0, arg, currentScope))
+
+		walk.result.writes = append(
+			walk.result.writes,
+			resolveWriteTarget(argv0, arg, currentScope),
+		)
 		index++
 	}
 }
@@ -173,10 +205,12 @@ func (walk *walker) scriptToolWrites(argv0 string, args []rawArg, currentScope *
 // through -i or a suffixed -i.bak form.
 func hasInPlaceSedFlag(args []rawArg) bool {
 	for _, arg := range args {
-		if arg.text == "-i" || strings.HasPrefix(arg.text, "-i.") || strings.HasPrefix(arg.text, "--in-place") {
+		if arg.text == "-i" || strings.HasPrefix(arg.text, "-i.") ||
+			strings.HasPrefix(arg.text, "--in-place") {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -188,6 +222,7 @@ func hasInPlaceAwkFlag(args []rawArg) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -199,6 +234,7 @@ func (walk *walker) patchWrite(argv0 string, args []rawArg, currentScope *scope)
 	if !found {
 		return
 	}
+
 	walk.result.writes = append(walk.result.writes, resolveWriteTarget(argv0, target, currentScope))
 }
 
@@ -209,11 +245,16 @@ func (walk *walker) gitApplyWrite(args []rawArg, currentScope *scope) {
 	if len(args) == 0 || !args[0].resolvable || args[0].value != "apply" {
 		return
 	}
+
 	target, found := lastNonFlagFrom(args, 1)
 	if !found {
 		return
 	}
-	walk.result.writes = append(walk.result.writes, resolveWriteTarget("git apply", target, currentScope))
+
+	walk.result.writes = append(
+		walk.result.writes,
+		resolveWriteTarget("git apply", target, currentScope),
+	)
 }
 
 // lastNonFlag returns the last operand that is not a flag.
@@ -228,7 +269,9 @@ func lastNonFlagFrom(args []rawArg, start int) (rawArg, bool) {
 			return args[index], true
 		}
 	}
+
 	var zero rawArg
+
 	return zero, false
 }
 
@@ -247,6 +290,7 @@ func resolveWriteTarget(argv0 string, token rawArg, currentScope *scope) WriteTa
 			Raw:        token.text,
 		}
 	}
+
 	resolved := currentScope.resolvePath(token.value)
 	if resolved == Unresolvable {
 		return WriteTarget{
@@ -258,6 +302,7 @@ func resolveWriteTarget(argv0 string, token rawArg, currentScope *scope) WriteTa
 			Raw:        token.text,
 		}
 	}
+
 	return WriteTarget{
 		Path:       resolved,
 		Resolvable: true,

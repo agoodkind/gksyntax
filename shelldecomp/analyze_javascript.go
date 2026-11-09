@@ -59,14 +59,25 @@ func init() {
 // `import { readFile } from "fs/promises"`, is recognized by the same table
 // as fs.readFileSync(...).
 var jsAlwaysReadMethods = map[string]map[string]bool{
-	"fs":          {"readFileSync": true, "readFile": true, "readdirSync": true, "readdir": true, "createReadStream": true},
+	"fs": {
+		"readFileSync":     true,
+		"readFile":         true,
+		"readdirSync":      true,
+		"readdir":          true,
+		"createReadStream": true,
+	},
 	"fs.promises": {"readFile": true},
 }
 
 // jsWriteMethods maps a known fs receiver text to the method names on it that
 // always write the file their first argument names.
 var jsWriteMethods = map[string]map[string]bool{
-	"fs": {"writeFileSync": true, "writeFile": true, "appendFileSync": true, "createWriteStream": true},
+	"fs": {
+		"writeFileSync":     true,
+		"writeFile":         true,
+		"appendFileSync":    true,
+		"createWriteStream": true,
+	},
 }
 
 // analyzeJavaScript walks a javascript program's tree and returns the files
@@ -101,6 +112,7 @@ func analyzeJavaScript(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	}
 	collector.buildBindings(in.Root)
 	collector.walk(in.Root)
+
 	return collector.reads, collector.writes
 }
 
@@ -142,12 +154,14 @@ var jsModuleReadMethods = map[string]map[string]bool{
 func (collector *jsCollector) buildBindings(root *tree_sitter.Node) {
 	var declarators []*tree_sitter.Node
 	collectKinds(root, map[string]bool{"variable_declarator": true}, &declarators)
+
 	for _, declarator := range declarators {
 		collector.bindRequireDestructure(declarator)
 	}
 
 	var importStatements []*tree_sitter.Node
 	collectKinds(root, map[string]bool{"import_statement": true}, &importStatements)
+
 	for _, statement := range importStatements {
 		collector.bindImportDestructure(statement)
 	}
@@ -165,10 +179,12 @@ func (collector *jsCollector) bindRequireDestructure(declarator *tree_sitter.Nod
 	if nameNode == nil || valueNode == nil || nameNode.Kind() != "object_pattern" {
 		return
 	}
+
 	moduleName, ok := collector.requireBindingModule(valueNode)
 	if !ok || !jsFsModuleNames[moduleName] {
 		return
 	}
+
 	for index := range nameNode.NamedChildCount() {
 		collector.bindObjectPatternEntry(nameNode.NamedChild(index), moduleName)
 	}
@@ -185,22 +201,28 @@ func (collector *jsCollector) bindObjectPatternEntry(entry *tree_sitter.Node, mo
 	if entry == nil {
 		return
 	}
+
 	if entry.Kind() == "shorthand_property_identifier_pattern" {
 		name := entry.Utf8Text(collector.in.Source)
 		collector.bindings[name] = jsBinding{canonical: name, module: moduleName}
+
 		return
 	}
+
 	if entry.Kind() != "pair_pattern" {
 		return
 	}
+
 	keyNode := entry.ChildByFieldName("key")
 	valueNode := entry.ChildByFieldName("value")
 	if keyNode == nil || valueNode == nil || keyNode.Kind() != "property_identifier" {
 		return
 	}
+
 	if valueNode.Kind() != "identifier" {
 		return
 	}
+
 	canonical := keyNode.Utf8Text(collector.in.Source)
 	localName := valueNode.Utf8Text(collector.in.Source)
 	collector.bindings[localName] = jsBinding{canonical: canonical, module: moduleName}
@@ -215,11 +237,15 @@ func (collector *jsCollector) requireModuleName(node *tree_sitter.Node) (string,
 	if node == nil || node.Kind() != "call_expression" {
 		return "", false
 	}
+
 	function := node.ChildByFieldName("function")
-	if function == nil || function.Kind() != "identifier" || function.Utf8Text(collector.in.Source) != "require" {
+	if function == nil || function.Kind() != "identifier" ||
+		function.Utf8Text(collector.in.Source) != "require" {
 		return "", false
 	}
+
 	arguments := node.ChildByFieldName("arguments")
+
 	return jsStringLiteralValue(jsPositionalArg(arguments, 0), collector.in.Source)
 }
 
@@ -235,18 +261,22 @@ func (collector *jsCollector) requireBindingModule(node *tree_sitter.Node) (stri
 	if moduleName, ok := collector.requireModuleName(node); ok {
 		return moduleName, true
 	}
+
 	if node == nil || node.Kind() != "member_expression" {
 		return "", false
 	}
+
 	object := node.ChildByFieldName("object")
 	property := node.ChildByFieldName("property")
 	if object == nil || property == nil || property.Utf8Text(collector.in.Source) != "promises" {
 		return "", false
 	}
+
 	moduleName, ok := collector.requireModuleName(object)
 	if !ok {
 		return "", false
 	}
+
 	return moduleName + "/promises", true
 }
 
@@ -262,8 +292,10 @@ func (collector *jsCollector) bindImportDestructure(statement *tree_sitter.Node)
 	if !ok || !jsFsModuleNames[moduleName] {
 		return
 	}
+
 	var specifiers []*tree_sitter.Node
 	collectKinds(statement, map[string]bool{"import_specifier": true}, &specifiers)
+
 	for _, specifier := range specifiers {
 		collector.bindImportSpecifier(specifier, moduleName)
 	}
@@ -279,11 +311,13 @@ func (collector *jsCollector) bindImportSpecifier(specifier *tree_sitter.Node, m
 	if nameNode == nil || nameNode.Kind() != "identifier" {
 		return
 	}
+
 	canonical := nameNode.Utf8Text(collector.in.Source)
 	localName := canonical
 	if aliasNode := specifier.ChildByFieldName("alias"); aliasNode != nil {
 		localName = aliasNode.Utf8Text(collector.in.Source)
 	}
+
 	collector.bindings[localName] = jsBinding{canonical: canonical, module: moduleName}
 }
 
@@ -295,9 +329,11 @@ func (collector *jsCollector) walk(node *tree_sitter.Node) {
 	if node == nil {
 		return
 	}
+
 	if node.Kind() == "call_expression" {
 		collector.classifyCall(node)
 	}
+
 	for index := range node.ChildCount() {
 		collector.walk(node.Child(index))
 	}
@@ -312,11 +348,13 @@ func (collector *jsCollector) classifyCall(node *tree_sitter.Node) {
 	if function == nil {
 		return
 	}
+
 	arguments := node.ChildByFieldName("arguments")
 	if function.Kind() == "identifier" {
 		collector.classifyBoundCall(function.Utf8Text(collector.in.Source), arguments)
 		return
 	}
+
 	if function.Kind() == "member_expression" {
 		collector.classifyMemberCall(function, arguments)
 	}
@@ -331,6 +369,7 @@ func (collector *jsCollector) classifyBoundCall(name string, arguments *tree_sit
 	if !ok {
 		return
 	}
+
 	// Checked against the binding's own module, not the union of both. A sync
 	// method destructured from fs/promises does not exist there, so a call to it
 	// throws before opening anything and must not be recorded as a read.
@@ -342,11 +381,15 @@ func (collector *jsCollector) classifyBoundCall(name string, arguments *tree_sit
 // classifyMemberCall handles a call whose function is a member expression,
 // routing fs.openSync by its flags argument and every other known fs
 // receiver/method pair by the always-read and write tables.
-func (collector *jsCollector) classifyMemberCall(function *tree_sitter.Node, arguments *tree_sitter.Node) {
+func (collector *jsCollector) classifyMemberCall(
+	function *tree_sitter.Node,
+	arguments *tree_sitter.Node,
+) {
 	propertyNode := function.ChildByFieldName("property")
 	if propertyNode == nil {
 		return
 	}
+
 	method := propertyNode.Utf8Text(collector.in.Source)
 	objectName := ""
 	if object := function.ChildByFieldName("object"); object != nil {
@@ -377,10 +420,12 @@ func (collector *jsCollector) classifyOpenSync(arguments *tree_sitter.Node) {
 	if flagsNode == nil {
 		return
 	}
+
 	flags, ok := jsStringLiteralValue(flagsNode, collector.in.Source)
 	if !ok {
 		return
 	}
+
 	if jsIsWriteFlag(flags) {
 		collector.addWrite(pathNode)
 	}
@@ -393,6 +438,7 @@ func (collector *jsCollector) addRead(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	resolved := collector.scope.resolvePath(value)
 	collector.reads = append(collector.reads, collector.readTarget(resolved, node))
 }
@@ -404,6 +450,7 @@ func (collector *jsCollector) addWrite(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	resolved := collector.scope.resolvePath(value)
 	collector.writes = append(collector.writes, collector.writeTarget(resolved, node))
 }
@@ -418,15 +465,19 @@ func (collector *jsCollector) resolveLiteralPath(node *tree_sitter.Node) (string
 	if node == nil {
 		return "", false
 	}
+
 	if node.Kind() == "string" {
 		return jsStringLiteralValue(node, collector.in.Source)
 	}
+
 	if node.Kind() == "template_string" {
 		return jsTemplateLiteralValue(node, collector.in.Source)
 	}
+
 	if node.Kind() == "call_expression" {
 		return collector.pathJoinValue(node)
 	}
+
 	return "", false
 }
 
@@ -440,18 +491,23 @@ func (collector *jsCollector) pathJoinValue(node *tree_sitter.Node) (string, boo
 	if function == nil || function.Kind() != "member_expression" {
 		return "", false
 	}
+
 	object := function.ChildByFieldName("object")
 	property := function.ChildByFieldName("property")
 	if object == nil || property == nil {
 		return "", false
 	}
-	if object.Utf8Text(collector.in.Source) != "path" || property.Utf8Text(collector.in.Source) != "join" {
+
+	if object.Utf8Text(collector.in.Source) != "path" ||
+		property.Utf8Text(collector.in.Source) != "join" {
 		return "", false
 	}
+
 	arguments := node.ChildByFieldName("arguments")
 	if arguments == nil || arguments.Kind() != "arguments" {
 		return "", false
 	}
+
 	parts := make([]string, 0, arguments.NamedChildCount())
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
@@ -459,11 +515,14 @@ func (collector *jsCollector) pathJoinValue(node *tree_sitter.Node) (string, boo
 		if !ok {
 			return "", false
 		}
+
 		parts = append(parts, value)
 	}
+
 	if len(parts) == 0 {
 		return "", false
 	}
+
 	return path.Join(parts...), true
 }
 
@@ -475,12 +534,15 @@ func (collector *jsCollector) pathJoinArgValue(node *tree_sitter.Node) (string, 
 	if node == nil {
 		return "", false
 	}
+
 	if node.Kind() == "string" {
 		return jsStringLiteralValue(node, collector.in.Source)
 	}
+
 	if node.Kind() == "template_string" {
 		return jsTemplateLiteralValue(node, collector.in.Source)
 	}
+
 	return "", false
 }
 
@@ -493,6 +555,7 @@ func (collector *jsCollector) readTarget(resolved string, node *tree_sitter.Node
 	if !resolvable {
 		targetPath = Unresolvable
 	}
+
 	return ReadTarget{
 		Path:       targetPath,
 		Resolvable: resolvable,
@@ -510,6 +573,7 @@ func (collector *jsCollector) writeTarget(resolved string, node *tree_sitter.Nod
 	if !resolvable {
 		targetPath = Unresolvable
 	}
+
 	return WriteTarget{
 		Path:       targetPath,
 		Resolvable: resolvable,
@@ -530,17 +594,22 @@ func jsPositionalArg(arguments *tree_sitter.Node, n int) *tree_sitter.Node {
 	if arguments == nil || arguments.Kind() != "arguments" {
 		return nil
 	}
+
 	count := 0
+
 	for index := range arguments.NamedChildCount() {
 		child := arguments.NamedChild(index)
 		if child == nil || child.Kind() == "spread_element" {
 			continue
 		}
+
 		if count == n {
 			return child
 		}
+
 		count++
 	}
+
 	return nil
 }
 
@@ -560,23 +629,29 @@ func jsStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool) 
 	if node == nil || node.Kind() != "string" {
 		return "", false
 	}
+
 	if strings.ContainsRune(node.Utf8Text(source), '\\') {
 		return "", false
 	}
+
 	var content strings.Builder
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		kind := child.Kind()
 		if kind == "escape_sequence" || kind == "html_character_reference" {
 			return "", false
 		}
+
 		if kind == "string_fragment" {
 			content.WriteString(child.Utf8Text(source))
 		}
 	}
+
 	return content.String(), true
 }
 
@@ -592,28 +667,36 @@ func jsTemplateLiteralValue(node *tree_sitter.Node, source []byte) (string, bool
 	if node == nil || node.Kind() != "template_string" {
 		return "", false
 	}
+
 	if strings.ContainsRune(node.Utf8Text(source), '\\') {
 		return "", false
 	}
+
 	var content strings.Builder
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		kind := child.Kind()
-		if kind == "template_substitution" || kind == "escape_sequence" || kind == "html_character_reference" {
+		if kind == "template_substitution" || kind == "escape_sequence" ||
+			kind == "html_character_reference" {
 			return "", false
 		}
+
 		if kind == "string_fragment" {
 			content.WriteString(child.Utf8Text(source))
 		}
 	}
+
 	return content.String(), true
 }
 
 // jsIsWriteFlag reports whether an fs.openSync flags string requests
 // writing: the brief's rule is a flags value beginning w or a.
 func jsIsWriteFlag(flags string) bool {
-	return strings.HasPrefix(flags, jsWriteFlagPrefixWrite) || strings.HasPrefix(flags, jsWriteFlagPrefixAppend)
+	return strings.HasPrefix(flags, jsWriteFlagPrefixWrite) ||
+		strings.HasPrefix(flags, jsWriteFlagPrefixAppend)
 }
