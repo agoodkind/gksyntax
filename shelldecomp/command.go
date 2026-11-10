@@ -186,6 +186,7 @@ func classifyArgv0(argv0 string) string {
 	if !found {
 		return CommandKindUnknown
 	}
+
 	return kind
 }
 
@@ -206,14 +207,17 @@ type rawArg struct {
 func extractCommand(node *tree_sitter.Node, source []byte, currentScope *scope) (string, []rawArg) {
 	nameNode := node.ChildByFieldName("name")
 	args := make([]rawArg, 0)
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		if node.FieldNameForChild(uint32(index)) != "argument" {
 			continue
 		}
+
 		args = append(args, resolveArgNode(child, source, currentScope))
 	}
 
@@ -221,6 +225,7 @@ func extractCommand(node *tree_sitter.Node, source []byte, currentScope *scope) 
 	if nameNode != nil {
 		argv0 = baseName(literalArgv0(nameNode, source))
 	}
+
 	return stripWrappers(argv0, args)
 }
 
@@ -231,6 +236,7 @@ func baseName(argv0 string) string {
 	if argv0 == "" || !strings.Contains(argv0, "/") {
 		return argv0
 	}
+
 	return path.Base(argv0)
 }
 
@@ -241,16 +247,19 @@ func literalArgv0(nameNode *tree_sitter.Node, source []byte) string {
 	if containsExpansion(text) {
 		return ""
 	}
+
 	for index := range nameNode.ChildCount() {
 		child := nameNode.Child(index)
 		if child == nil {
 			continue
 		}
+
 		kind := child.Kind()
 		if kind == "command_substitution" || kind == "simple_expansion" || kind == "expansion" {
 			return ""
 		}
 	}
+
 	return text
 }
 
@@ -264,17 +273,21 @@ func stripWrappers(argv0 string, args []rawArg) (string, []rawArg) {
 			if next == nil {
 				return argv0, args
 			}
+
 			argv0, args = promoteFirstArg(next)
 			continue
 		}
+
 		if argv0 == "sudo" {
 			next := dropSudoFlags(args)
 			if next == nil {
 				return argv0, args
 			}
+
 			argv0, args = promoteFirstArg(next)
 			continue
 		}
+
 		return argv0, args
 	}
 }
@@ -286,9 +299,11 @@ func dropEnvAssignments(args []rawArg) []rawArg {
 	for index < len(args) && isAssignment(args[index].text) {
 		index++
 	}
+
 	if index >= len(args) {
 		return nil
 	}
+
 	return args[index:]
 }
 
@@ -301,15 +316,19 @@ func dropSudoFlags(args []rawArg) []rawArg {
 		if !strings.HasPrefix(token, "-") {
 			break
 		}
+
 		if token == "-u" || token == "--user" {
 			index += 2
 			continue
 		}
+
 		index++
 	}
+
 	if index >= len(args) {
 		return nil
 	}
+
 	return args[index:]
 }
 
@@ -321,6 +340,7 @@ func promoteFirstArg(args []rawArg) (string, []rawArg) {
 	if !first.resolvable {
 		return "", rest
 	}
+
 	return baseName(first.value), rest
 }
 
@@ -330,6 +350,7 @@ func isAssignment(token string) bool {
 	if equals <= 0 {
 		return false
 	}
+
 	name := token[:equals]
 	for _, char := range name {
 		isLetter := char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z'
@@ -338,5 +359,6 @@ func isAssignment(token string) bool {
 			return false
 		}
 	}
+
 	return true
 }

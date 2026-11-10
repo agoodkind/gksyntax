@@ -10,15 +10,18 @@ import (
 func awkRegion(t *testing.T, decomposition *Decomposition) EmbeddedRegion {
 	t.Helper()
 	regions := decomposition.EmbeddedRegions()
+
 	awkRegions := make([]EmbeddedRegion, 0, len(regions))
 	for _, region := range regions {
 		if region.Lang == LangAwk {
 			awkRegions = append(awkRegions, region)
 		}
 	}
+
 	if len(awkRegions) != 1 {
 		t.Fatalf("awk regions = %d, want 1", len(awkRegions))
 	}
+
 	return awkRegions[0]
 }
 
@@ -31,14 +34,19 @@ func awkRegionReads(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -50,14 +58,19 @@ func awkRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.WriteTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -98,6 +111,7 @@ func TestAwkPrintLiteralWrite(t *testing.T) {
 	if len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for a print redirect", reads)
 	}
+
 	writes := awkRegionWrites(t, decomposition)
 	want := []string{"/repo/out.txt"}
 	if !equalStrings(writes, want) {
@@ -167,18 +181,22 @@ func TestAwkEscapedStringTargetDropped(t *testing.T) {
 // data file is a read target.
 func TestAwkInplaceReadScanNoProgramLeak(t *testing.T) {
 	command := `gawk -i inplace '{ gsub(/a/,"b") }' file.txt`
+
 	decomposition := ParseWithOptions(command, "/repo", Options{Home: "/home/u"})
 	for _, target := range decomposition.ReadTargets() {
 		if target.Raw == `{ gsub(/a/,"b") }` || target.Raw == `'{ gsub(/a/,"b") }'` {
 			t.Fatalf("awk program leaked as a read path: %+v", target)
 		}
 	}
+
 	reads := make([]string, 0)
+
 	for _, target := range decomposition.ReadTargets() {
 		if target.Resolvable {
 			reads = append(reads, target.Path)
 		}
 	}
+
 	sort.Strings(reads)
 	want := []string{"/repo/file.txt"}
 	if !equalStrings(reads, want) {
