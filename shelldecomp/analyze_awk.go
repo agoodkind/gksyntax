@@ -27,6 +27,7 @@ func init() {
 func analyzeAwk(in AnalyzerInput) ([]ReadTarget, []WriteTarget) {
 	collector := &awkCollector{in: in, reads: nil, writes: nil}
 	collector.walk(in.Root)
+
 	return collector.reads, collector.writes
 }
 
@@ -44,13 +45,16 @@ func (collector *awkCollector) walk(node *tree_sitter.Node) {
 	if node == nil {
 		return
 	}
+
 	kind := node.Kind()
 	if kind == "getline_file" {
 		collector.classifyGetlineFile(node)
 	}
+
 	if kind == "redirected_io_statement" {
 		collector.classifyRedirectedIO(node)
 	}
+
 	for index := range node.ChildCount() {
 		collector.walk(node.Child(index))
 	}
@@ -81,6 +85,7 @@ func (collector *awkCollector) addRead(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	scope := scope{cwd: collector.in.Cwd, homeDir: collector.in.Home}
 	resolved := scope.resolvePath(value)
 	collector.reads = append(collector.reads, collector.readTarget(resolved, node))
@@ -93,6 +98,7 @@ func (collector *awkCollector) addWrite(node *tree_sitter.Node) {
 	if !ok {
 		return
 	}
+
 	scope := scope{cwd: collector.in.Cwd, homeDir: collector.in.Home}
 	resolved := scope.resolvePath(value)
 	collector.writes = append(collector.writes, collector.writeTarget(resolved, node))
@@ -107,6 +113,7 @@ func (collector *awkCollector) readTarget(resolved string, node *tree_sitter.Nod
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return ReadTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -124,6 +131,7 @@ func (collector *awkCollector) writeTarget(resolved string, node *tree_sitter.No
 	if !resolvable {
 		path = Unresolvable
 	}
+
 	return WriteTarget{
 		Path:       path,
 		Resolvable: resolvable,
@@ -143,19 +151,24 @@ func awkStringLiteralValue(node *tree_sitter.Node, source []byte) (string, bool)
 	if node == nil || node.Kind() != "string" {
 		return "", false
 	}
+
 	for index := range node.ChildCount() {
 		child := node.Child(index)
 		if child == nil {
 			continue
 		}
+
 		if child.Kind() == "\"" {
 			continue
 		}
+
 		return "", false
 	}
+
 	text := node.Utf8Text(source)
 	if len(text) < 2 || text[0] != '"' || text[len(text)-1] != '"' {
 		return "", false
 	}
+
 	return text[1 : len(text)-1], true
 }

@@ -58,5 +58,6 @@ func lookupAnalyzer(lang Lang) (ReadAnalyzer, bool) {
 	analyzers.mutex.RLock()
 	defer analyzers.mutex.RUnlock()
 	analyzer, found := analyzers.byLang[lang]
+
 	return analyzer, found
 }

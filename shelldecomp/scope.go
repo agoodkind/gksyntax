@@ -53,10 +53,12 @@ func (currentScope *scope) applyCd(args []Word) {
 		currentScope.cwd = currentScope.homeDir
 		return
 	}
+
 	if !target.Resolvable {
 		currentScope.cwd = Unresolvable
 		return
 	}
+
 	currentScope.cwd = currentScope.resolvePath(target.Value)
 }
 
@@ -69,9 +71,11 @@ func (currentScope *scope) resolvePath(token string) string {
 	if path.IsAbs(expanded) {
 		return path.Clean(expanded)
 	}
+
 	if currentScope.cwd == "" || currentScope.cwd == Unresolvable {
 		return Unresolvable
 	}
+
 	return path.Clean(path.Join(currentScope.cwd, expanded))
 }
 
@@ -83,14 +87,18 @@ func expandTilde(token string, homeDir string) string {
 		if homeDir == "" {
 			return token
 		}
+
 		return homeDir
 	}
+
 	if strings.HasPrefix(token, "~/") {
 		if homeDir == "" {
 			return token
 		}
+
 		return path.Join(homeDir, token[2:])
 	}
+
 	return token
 }
 
@@ -102,7 +110,9 @@ func firstNonFlag(args []Word) (Word, bool) {
 			return word, true
 		}
 	}
+
 	var zero Word
+
 	return zero, false
 }
 
@@ -119,6 +129,7 @@ func resolveArgNode(node *tree_sitter.Node, source []byte, currentScope *scope) 
 	if !resolvable && currentScope != nil {
 		value, resolvable = currentScope.resolveExpansion(text)
 	}
+
 	return rawArg{
 		text:       text,
 		value:      value,
@@ -137,15 +148,19 @@ func literalValue(node *tree_sitter.Node, source []byte) (string, bool) {
 	if kind == kindRawString {
 		return stripQuotes(text), true
 	}
+
 	if kind == kindString {
 		return literalStringValue(node, source)
 	}
+
 	if isNonLiteralKind(kind) {
 		return "", false
 	}
+
 	if containsExpansion(text) {
 		return "", false
 	}
+
 	return text, true
 }
 
@@ -184,12 +199,15 @@ func literalStringValue(node *tree_sitter.Node, source []byte) (string, bool) {
 		if child == nil {
 			continue
 		}
+
 		kind := nodeKind(child.Kind())
 		if kind == kindDoubleQuote || kind == kindStringContent {
 			continue
 		}
+
 		return "", false
 	}
+
 	// The opening and closing quote are each exactly one byte (the ASCII '"'
 	// the grammar requires to delimit a string node), so the literal content
 	// is the span strictly between them.
@@ -199,6 +217,7 @@ func literalStringValue(node *tree_sitter.Node, source []byte) (string, bool) {
 	if end < start || end > uint(len(source)) {
 		return "", false
 	}
+
 	return string(source[start:end]), true
 }
 
@@ -212,6 +231,7 @@ func stripQuotes(text string) string {
 			return text[1 : len(text)-1]
 		}
 	}
+
 	return text
 }
 
@@ -235,6 +255,7 @@ type assignmentValue struct {
 func cloneAssignments(in map[string]assignmentValue) map[string]assignmentValue {
 	out := make(map[string]assignmentValue, len(in))
 	maps.Copy(out, in)
+
 	return out
 }
 
@@ -243,9 +264,11 @@ func (currentScope *scope) applyAssignment(assignment Assignment) {
 	if currentScope.assignments == nil {
 		currentScope.assignments = make(map[string]assignmentValue)
 	}
+
 	if assignment.Name == "" {
 		return
 	}
+
 	currentScope.assignments[assignment.Name] = assignmentValue{
 		value:      assignment.Value,
 		resolvable: assignment.Resolvable,
@@ -266,17 +289,21 @@ func resolveExpansionText(text string, assignments map[string]assignmentValue) (
 		quoted = true
 		inner = text[1 : len(text)-1]
 	}
+
 	name, ok := expansionName(inner)
 	if !ok {
 		return "", false
 	}
+
 	value, found := assignments[name]
 	if !found || !value.resolvable {
 		return "", false
 	}
+
 	if !quoted && !safeUnquotedExpansionValue(value.value) {
 		return "", false
 	}
+
 	return value.value, true
 }
 
@@ -286,10 +313,12 @@ func expansionName(text string) (string, bool) {
 		name := text[2 : len(text)-1]
 		return name, isShellName(name)
 	}
+
 	if strings.HasPrefix(text, "$") {
 		name := text[1:]
 		return name, isShellName(name)
 	}
+
 	return "", false
 }
 
@@ -298,16 +327,19 @@ func isShellName(name string) bool {
 	if name == "" {
 		return false
 	}
+
 	for index, char := range name {
 		isLetter := char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z'
 		isDigit := char >= '0' && char <= '9'
 		if index == 0 && !isLetter && char != '_' {
 			return false
 		}
+
 		if !isLetter && !isDigit && char != '_' {
 			return false
 		}
 	}
+
 	return true
 }
 

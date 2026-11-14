@@ -179,5 +179,6 @@ func LanguageForPath(path string) string {
 	if !found {
 		return "text"
 	}
+
 	return language
 }

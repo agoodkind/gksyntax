@@ -1,4 +1,194 @@
-# golangci-lint: generated_at=2026-11-09T17:17:20Z
+# golangci-lint: generated_at=2026-11-10T10:37:55Z
+chunk/chunk.go:130:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"language %s not supported by AST splitter\", language)" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:161:4: do not define dynamic errors, use wrapped static errors instead: "errors.New(\"nil tree\")" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:164:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"parse returned nil tree for %s\", path)" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:179:4: do not define dynamic errors, use wrapped static errors instead: "errors.New(\"nil root node\")" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:182:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"parse produced no root node for %s\", path)" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:233:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:282:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:438:27: parameter name 's' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:48:22: Magic number: 2500, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:49:22: Magic number: 300, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:50:22: Magic number: 1000, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/chunk.go:51:22: Magic number: 200, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:100:3: string "\ncase " has 10 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:109:3: string "\ndef " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:182:3: string "\ndo " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:210:3: string "\nenum " has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:240:3: string "\ninterface " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:557:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:91:3: string "\nfunction " has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:92:3: string "\nconst " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:94:3: string "\nvar " has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:95:3: string "\nclass " has 11 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:96:3: string "\nif " has 15 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:97:3: string "\nfor " has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:98:3: string "\nwhile " has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+chunk/langchain.go:99:3: string "\nswitch " has 9 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_applescript.go:137:17: Magic number: 2, in <operation> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_applescript.go:194:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_applescript.go:225:16: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_applescript.go:288:43: Magic number: 2, in <argument> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_applescript.go:294:4: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_applescript.go:36:1: godoc line is too long (82 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_awk.go:151:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:107:24: parameter name 'in' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:134:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:222:25: string `identifier` has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:237:35: string `call_expression` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:265:35: string `member_expression` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:355:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:469:20: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:473:20: string `template_string` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_javascript.go:593:51: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:116:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:215:23: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:85:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:69:66: string `open` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:79:21: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:83:22: Magic number: 3, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_perl.go:99:2: variable name 'ok' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_php.go:172:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_php.go:297:52: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:97:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:124:24: string `identifier` has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:277:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:129:24: string `attribute` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:137:13: string `open` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:84:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:29:2: string `read` has 3 occurrences, but such constant `asKeywordRead` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:46:2: string `call` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:532:49: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:537:38: string `keyword_argument` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:615:37: string `list` has 3 occurrences, but such constant `kindList` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:622:1: godoc line is too long (81 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:66:20: parameter name 'in' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:688:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:705:14: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python.go:707:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:103:21: string `call` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:70:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:15:2: string `glob` has 4 occurrences, but such constant `phpFuncGlob` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:393:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:206:13: string `attribute` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:269:38: string `keyword_argument` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:314:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:397:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:39:2: string `list` has 3 occurrences, but such constant `kindList` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:413:4: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:416:14: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_python_dataflow.go:80:52: string `identifier` has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:106:43: string `open` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:110:42: string `glob` has 4 occurrences, but such constant `phpFuncGlob` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:154:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:258:53: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:299:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:321:22: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:323:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:33:11: string `read` has 3 occurrences, but such constant `asKeywordRead` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:33:2: string `File` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:35:2: string `Dir` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_ruby.go:74:20: string `call` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sed.go:145:37: Magic number: 2, in <argument> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sed.go:160:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sed.go:231:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sed.go:43:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sed.go:75:4: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sql.go:83:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sql.go:360:16: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/analyze_sql.go:232:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:118:2: string `grep` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:119:2: string `egrep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:120:2: string `fgrep` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:123:2: string `ack` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:143:2: string `git` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:149:2: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:151:2: string `python3` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:152:2: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:154:2: string `ruby` has 4 occurrences, but such constant `rubyArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:157:2: string `bash` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:160:2: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:161:2: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:162:2: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:232:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command.go:322:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:126:2: string `grep` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:139:2: string `egrep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:158:2: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:159:2: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:160:2: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:168:3: string `--slurpfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:169:3: string `--rawfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:191:22: string `git` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:205:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:234:10: string `git grep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/command_build.go:266:2: string `ack` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/decomp_test.go:24:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch.go:182:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:86:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:135:24: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:168:79: string `inplace` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:387:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:281:4: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:35:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_entries.go:418:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/dispatch_test.go:284:5: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:38:10: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:42:10: string `ruby` has 4 occurrences, but such constant `rubyArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:44:10: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:50:10: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:54:10: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:72:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/node.go:78:10: string `bash` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/options.go:22:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/parse.go:248:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/parse.go:357:2: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/parse.go:358:2: string `python3` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/parse.go:359:2: string `bash` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/parse.go:363:2: string `ruby` has 4 occurrences, but such constant `rubyArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/parse.go:364:2: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_perl.go:103:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_perl.go:110:18: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_perl.go:20:22: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_perl.go:85:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_perl.go:99:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_python.go:207:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_python.go:35:22: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_python.go:35:51: string `python3` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/program_python.go:80:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:117:3: string `--slurpfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:118:3: string `--rawfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:143:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:79:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:223:58: Magic number: 3, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:240:54: Magic number: 2, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:32:2: string `grep` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:33:2: string `egrep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:34:2: string `fgrep` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:37:2: string `ack` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:38:2: string `git grep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:39:2: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:40:2: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:41:2: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:50:15: string `--regexp=` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:50:28: string `--file=` has 10 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/readscan.go:85:5: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/scope.go:227:18: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/scope.go:59:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:100:14: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:100:32: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:97:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:110:14: string `git` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:181:72: string `inplace` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:193:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:265:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-10T10:37:55Z
+shelldecomp/write.go:95:14: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+treesitter/grammars/awk/binding.go:13:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+treesitter/grammars/dart/binding.go:13:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+treesitter/grammars/perl/binding.go:15:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+treesitter/grammars/swift/binding.go:14:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+treesitter/modulezip_test.go:143:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
+treesitter/registry_test.go:11:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-10T10:37:55Z
 chunk/cast_test.go:97:2: missing whitespace below this line (after-block) (wsl_v5)	# golangci-lint:first_added=2026-11-09T02:25:03Z last_seen=2026-11-09T02:25:03Z
 chunk/cast_test.go:94:2: missing whitespace above this line (too many statements above for) (wsl_v5)	# golangci-lint:first_added=2026-11-09T02:25:03Z last_seen=2026-11-09T02:25:03Z
 chunk/cast_test.go:39:2: missing whitespace above this line (no shared variables above range) (wsl_v5)	# golangci-lint:first_added=2026-11-09T02:25:03Z last_seen=2026-11-09T02:25:03Z
@@ -179,236 +369,46 @@ treesitter/modulezip_test.go:86:2: missing whitespace above this line (no shared
 treesitter/registry.go:181:2: missing whitespace below this line (after-block) (wsl_v5)	# golangci-lint:first_added=2026-11-09T02:25:03Z last_seen=2026-11-09T02:25:03Z
 treesitter/registry.go:182:2: missing whitespace above this line (too many lines above return) (wsl_v5)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-09T02:25:03Z
 treesitter/registry_test.go:23:2: missing whitespace below this line (after-block) (wsl_v5)	# golangci-lint:first_added=2026-11-09T02:25:03Z last_seen=2026-11-09T02:25:03Z
-chunk/chunk.go:139:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_applescript.go:36:1: godoc line is too long (82 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_javascript.go:122:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_perl.go:103:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_python.go:96:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_python.go:83:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_python.go:552:1: godoc line is too long (81 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_python_dataflow.go:70:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_python_dataflow.go:36:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_sed.go:205:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/analyze_sed.go:42:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/command.go:227:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/dispatch.go:165:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/dispatch_entries.go:355:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/dispatch_entries.go:35:1: godoc line is too long (79 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/node.go:72:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/options.go:22:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/program_perl.go:89:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/program_python.go:174:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/readscan.go:135:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-shelldecomp/write.go:224:1: godoc line is too long (78 > 77) (godoclint)	# golangci-lint:first_added=2026-11-08T23:15:40Z last_seen=2026-11-08T23:15:40Z
-chunk/chunk.go:100:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"parse returned nil tree for %s\", path)" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:94:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:106:100: do not define dynamic errors, use wrapped static errors instead: "errors.New(\"nil root node\")" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:194:1: The line is 127 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:107:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"parse produced no root node for %s\", path)" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:123:1: The line is 131 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:128:1: The line is 139 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:144:1: The line is 138 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:155:1: The line is 121 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:171:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:211:1: The line is 165 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:288:27: parameter name 's' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:48:22: Magic number: 2500, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:49:22: Magic number: 300, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:50:22: Magic number: 1000, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:51:22: Magic number: 200, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:61:1: The line is 136 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:82:1: The line is 122 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:86:15: do not define dynamic errors, use wrapped static errors instead: "fmt.Errorf(\"language %s not supported by AST splitter\", language)" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/chunk.go:92:5: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/chunk.go:99:96: do not define dynamic errors, use wrapped static errors instead: "errors.New(\"nil tree\")" (err113)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:121:38: string "\ndo " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:130:39: string "\nenum " has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:140:3: string "\ninterface " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 chunk/langchain.go:359:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:303:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:91:18: string "\nconst " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:91:3: string "\nfunction " has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:91:40: string "\nvar " has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:91:50: string "\nclass " has 11 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:92:12: string "\nfor " has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:92:22: string "\nwhile " has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:92:34: string "\nswitch " has 9 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:92:3: string "\nif " has 15 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:92:47: string "\ncase " has 10 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-chunk/langchain.go:96:15: string "\ndef " has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze.go:61:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_applescript.go:133:17: Magic number: 2, in <operation> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_applescript.go:182:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_applescript.go:79:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_applescript.go:210:16: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_applescript.go:266:43: Magic number: 2, in <argument> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_applescript_test.go:61:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_awk.go:30:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_awk.go:143:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_awk_test.go:61:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:612:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:201:25: string `identifier` has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:215:35: string `call_expression` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:238:35: string `member_expression` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:421:20: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:424:20: string `template_string` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:529:51: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_javascript.go:62:1: The line is 121 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_javascript.go:96:24: parameter name 'in' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_javascript_module_test.go:12:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_javascript_test.go:63:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_perl.go:79:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_perl.go:185:23: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_perl.go:66:66: string `open` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_perl.go:74:21: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_perl.go:77:22: Magic number: 3, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_perl.go:89:2: variable name 'ok' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_perl_test.go:60:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_php.go:86:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_php.go:282:52: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_php_test.go:62:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:120:24: string `identifier` has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:77:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:124:24: string `attribute` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:132:13: string `open` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:29:2: string `read` has 3 occurrences, but such constant `asKeywordRead` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:46:2: string `call` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:476:49: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:480:38: string `keyword_argument` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:546:37: string `list` has 3 occurrences, but such constant `kindList` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:609:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:622:14: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:624:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python.go:66:20: parameter name 'in' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:100:21: string `call` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:415:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:15:2: string `glob` has 4 occurrences, but such constant `phpFuncGlob` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:187:13: string `attribute` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:238:38: string `keyword_argument` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:347:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:360:4: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:362:14: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:39:2: string `list` has 3 occurrences, but such constant `kindList` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_python_dataflow.go:79:52: string `identifier` has 14 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_python_test.go:89:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:100:43: string `open` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:104:42: string `glob` has 4 occurrences, but such constant `phpFuncGlob` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:51:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:241:53: parameter name 'n' is too short for the scope of its usage (varnamelen)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:277:35: string `string` has 7 occurrences, but such constant `phpKindString` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:294:22: string `string_content` has 4 occurrences, but such constant `phpKindStringContent` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:296:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:33:11: string `read` has 3 occurrences, but such constant `asKeywordRead` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:33:2: string `File` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:35:2: string `Dir` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_ruby.go:72:20: string `call` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_ruby_test.go:62:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_sed.go:69:4: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_sed.go:132:37: Magic number: 2, in <argument> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_sed.go:147:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_sed_test.go:28:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_sql.go:82:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_sql.go:87:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/analyze_sql.go:323:16: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_sql.go:360:1: The line is 122 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_sql.go:368:1: The line is 127 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/analyze_sql_test.go:61:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/api.go:72:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/assignment.go:71:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:118:2: string `grep` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:119:2: string `egrep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:120:2: string `fgrep` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:123:2: string `ack` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:143:2: string `git` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:149:2: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:151:2: string `python3` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:152:2: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:154:2: string `ruby` has 4 occurrences, but such constant `rubyArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:157:2: string `bash` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:160:2: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:161:2: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:162:2: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/command.go:341:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command.go:306:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:113:2: string `grep` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:118:2: string `egrep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:129:2: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:130:2: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:131:2: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:134:78: string `--slurpfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:134:99: string `--rawfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:149:22: string `git` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:85:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:189:10: string `git grep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/command_build.go:214:2: string `ack` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/command_build.go:58:1: The line is 131 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/decomp_test.go:22:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/dispatch.go:98:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/dispatch_entries.go:96:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/dispatch_entries.go:131:24: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/dispatch_entries.go:158:79: string `inplace` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/dispatch_entries.go:334:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/dispatch_entries.go:249:4: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/dispatch_entries.go:381:5: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/dispatch_test.go:255:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/dispatch_test.go:246:5: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/fabrication_test.go:43:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/node.go:38:10: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/node.go:42:10: string `ruby` has 4 occurrences, but such constant `rubyArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/node.go:44:10: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/node.go:50:10: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/node.go:54:10: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/node.go:78:10: string `bash` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/options.go:44:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/parse.go:358:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/parse.go:327:2: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/parse.go:328:2: string `python3` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/parse.go:329:2: string `bash` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/parse.go:333:2: string `ruby` has 4 occurrences, but such constant `rubyArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/parse.go:334:2: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/parse.go:68:1: The line is 138 characters long, which exceeds the maximum of 120 characters. (lll)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/parse.go:93:5: avoid inline error handling using `if err := ...; err != nil`; use plain assignment `err := ...` (noinlineerr)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_perl.go:100:18: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_perl.go:93:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_perl.go:20:22: string `perl` has 5 occurrences, but such constant `perlArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_perl.go:77:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/program_perl_test.go:23:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/program_python.go:84:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_python.go:35:22: string `python` has 5 occurrences, but such constant `pythonArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_python.go:35:51: string `python3` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/program_python.go:70:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:110:24: string `--rawfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:110:3: string `--slurpfile` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:77:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/readscan.go:94:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:209:58: Magic number: 3, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:224:54: Magic number: 2, in <assign> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:32:2: string `grep` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:33:2: string `egrep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:34:2: string `fgrep` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:37:2: string `ack` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:38:2: string `git grep` has 5 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:39:2: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:40:2: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:41:2: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:50:15: string `--regexp=` has 7 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:50:28: string `--file=` has 10 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/readscan.go:82:5: break with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/readscan_twovalue_test.go:13:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/scope.go:94:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/scope.go:208:18: Magic number: 2, in <condition> detected (mnd)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:155:72: string `inplace` has 3 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:165:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:93:3: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:83:14: string `sed` has 7 occurrences, but such constant `sedArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:87:14: string `awk` has 8 occurrences, but such constant `awkArgv0` already exists (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:87:32: string `gawk` has 6 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-shelldecomp/write.go:95:14: string `git` has 4 occurrences, make it a constant (goconst)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 shelldecomp/write_test.go:16:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-treesitter/grammars/awk/binding.go:13:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-treesitter/grammars/dart/binding.go:13:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-treesitter/grammars/perl/binding.go:15:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-treesitter/grammars/swift/binding.go:14:1: Comment should end in a period (godot)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-treesitter/modulezip_test.go:126:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
 treesitter/registry.go:182:2: return with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z
-treesitter/registry_test.go:11:4: continue with no blank line before (nlreturn)	# golangci-lint:first_added=2026-11-08T23:15:29Z last_seen=2026-11-08T23:15:29Z

@@ -10,6 +10,7 @@ func TestGrammarForLanguageReturnsRegisteredGrammars(t *testing.T) {
 			t.Errorf("GrammarForLanguage(%q) reported unsupported, want supported", language)
 			continue
 		}
+
 		if grammar == nil {
 			t.Errorf("GrammarForLanguage(%q) returned nil grammar", language)
 		}
@@ -21,6 +22,7 @@ func TestGrammarForLanguageRejectsUnknown(t *testing.T) {
 	if ok {
 		t.Errorf("GrammarForLanguage(unknown) reported supported, want unsupported")
 	}
+
 	if grammar != nil {
 		t.Errorf("GrammarForLanguage(unknown) returned non-nil grammar")
 	}

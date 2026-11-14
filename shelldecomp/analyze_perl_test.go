@@ -10,15 +10,18 @@ import (
 func perlRegion(t *testing.T, decomposition *Decomposition) EmbeddedRegion {
 	t.Helper()
 	regions := decomposition.EmbeddedRegions()
+
 	perlRegions := make([]EmbeddedRegion, 0, len(regions))
 	for _, region := range regions {
 		if region.Lang == LangPerl {
 			perlRegions = append(perlRegions, region)
 		}
 	}
+
 	if len(perlRegions) != 1 {
 		t.Fatalf("perl regions = %d, want 1", len(perlRegions))
 	}
+
 	return perlRegions[0]
 }
 
@@ -30,14 +33,19 @@ func perlRegionReads(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.ReadTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -49,14 +57,19 @@ func perlRegionWrites(t *testing.T, decomposition *Decomposition) []string {
 	if region.Parsed == nil {
 		return nil
 	}
+
 	paths := make([]string, 0)
+
 	for _, target := range region.Parsed.WriteTargets() {
 		if !target.Resolvable {
 			continue
 		}
+
 		paths = append(paths, target.Path)
 	}
+
 	sort.Strings(paths)
+
 	return paths
 }
 
@@ -68,6 +81,7 @@ func TestPerlOpenThreeArgRead(t *testing.T) {
 	if !equalStrings(got, want) {
 		t.Fatalf("reads = %v, want %v", got, want)
 	}
+
 	if writes := perlRegionWrites(t, decomposition); len(writes) != 0 {
 		t.Fatalf("writes = %v, want none for a read open", writes)
 	}
@@ -81,6 +95,7 @@ func TestPerlOpenThreeArgWrite(t *testing.T) {
 	if !equalStrings(got, want) {
 		t.Fatalf("writes = %v, want %v", got, want)
 	}
+
 	if reads := perlRegionReads(t, decomposition); len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for a write open", reads)
 	}
@@ -132,6 +147,7 @@ func TestPerlOpenDupModeSkipped(t *testing.T) {
 	if reads := perlRegionReads(t, decomposition); len(reads) != 0 {
 		t.Fatalf("reads = %v, want none for a dup open", reads)
 	}
+
 	if writes := perlRegionWrites(t, decomposition); len(writes) != 0 {
 		t.Fatalf("writes = %v, want none for a dup open", writes)
 	}

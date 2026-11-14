@@ -33,6 +33,7 @@ func extractAssignment(node *tree_sitter.Node, source []byte, scopeID int) Assig
 			assignment.Name = name
 		}
 	}
+
 	if assignment.Name == "" {
 		return assignment
 	}
@@ -43,12 +44,14 @@ func extractAssignment(node *tree_sitter.Node, source []byte, scopeID int) Assig
 	if valueNode != nil {
 		value, valueResolvable = literalValue(valueNode, source)
 	}
+
 	if !valueResolvable || assignmentUsesAppend(nameNode, valueNode, source) {
 		return assignment
 	}
 
 	assignment.Value = value
 	assignment.Resolvable = true
+
 	return assignment
 }
 
@@ -62,11 +65,14 @@ func assignmentUsesAppend(
 	if nameNode == nil || valueNode == nil {
 		return false
 	}
+
 	start := nameNode.EndByte()
 	end := valueNode.StartByte()
 	if start > end || end > uint(len(source)) {
 		return false
 	}
+
 	operator := string(source[start:end])
+
 	return strings.Contains(operator, "+=")
 }

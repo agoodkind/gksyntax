@@ -126,6 +126,7 @@ func (dispatcher *Dispatcher) tryAST(
 			"language",
 			language,
 		)
+
 		return nil, fmt.Errorf("language %s not supported by AST splitter", language)
 	}
 
@@ -143,6 +144,7 @@ func (dispatcher *Dispatcher) tryAST(
 			"err",
 			err,
 		)
+
 		return nil, fmt.Errorf("set parser language for %s: %w", language, err)
 	}
 
@@ -158,6 +160,7 @@ func (dispatcher *Dispatcher) tryAST(
 			"err",
 			errors.New("nil tree"),
 		)
+
 		return nil, fmt.Errorf("parse returned nil tree for %s", path)
 	}
 
@@ -175,6 +178,7 @@ func (dispatcher *Dispatcher) tryAST(
 			"err",
 			errors.New("nil root node"),
 		)
+
 		return nil, fmt.Errorf("parse produced no root node for %s", path)
 	}
 

@@ -20,13 +20,16 @@ func (walk *walker) perlOperandReads(command Command, currentScope *scope) {
 	if command.Argv0 != "perl" {
 		return
 	}
+
 	if !perlHasLoopFlag(command.Args) {
 		return
 	}
+
 	operands, hasScript := perlDataOperands(command.Args)
 	if !hasScript {
 		return
 	}
+
 	for _, token := range operands {
 		walk.result.reads = append(walk.result.reads, perlReadTarget(token, currentScope))
 	}
@@ -42,10 +45,12 @@ func perlHasLoopFlag(args []Word) bool {
 		if !isPerlShortFlagCluster(token) {
 			continue
 		}
+
 		if strings.ContainsAny(token[1:], "np") {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -60,6 +65,7 @@ func perlHasLoopFlag(args []Word) bool {
 func perlDataOperands(args []Word) ([]Word, bool) {
 	operands := make([]Word, 0, len(args))
 	hasScript := false
+
 	index := 0
 	for index < len(args) {
 		token := args[index].Text
@@ -69,16 +75,20 @@ func perlDataOperands(args []Word) ([]Word, bool) {
 				index += 2
 				continue
 			}
+
 			index++
 			continue
 		}
+
 		if strings.HasPrefix(token, "--") {
 			index++
 			continue
 		}
+
 		operands = append(operands, args[index])
 		index++
 	}
+
 	return operands, hasScript
 }
 
@@ -100,9 +110,11 @@ func isPerlShortFlagCluster(token string) bool {
 	if len(token) < 2 {
 		return false
 	}
+
 	if token[0] != '-' || token[1] == '-' {
 		return false
 	}
+
 	return true
 }
 
@@ -120,6 +132,7 @@ func perlReadTarget(token Word, currentScope *scope) ReadTarget {
 			Raw:        token.Text,
 		}
 	}
+
 	resolved := currentScope.resolvePath(token.Value)
 	if resolved == Unresolvable || resolved == "" {
 		return ReadTarget{
@@ -130,6 +143,7 @@ func perlReadTarget(token Word, currentScope *scope) ReadTarget {
 			Raw:        token.Text,
 		}
 	}
+
 	return ReadTarget{
 		Path:       resolved,
 		Resolvable: true,
